@@ -1,0 +1,19 @@
+@import "tailwindcss";
+@config "../tailwind.config.js"; /* 👈 Forces v4 to read your class-mode config */
+
+/* Fix React Flow White Boxes */
+.react-flow__node {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: auto !important;
+}
+
+/* Ensure the app takes full height */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}

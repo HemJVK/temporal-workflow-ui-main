@@ -1,0 +1,161 @@
+import type { IntegrationSchema } from "../types";
+
+export const aiIntegrations: IntegrationSchema[] = [
+  {
+    type: "tool_generic_llm",
+    label: "LLM",
+    category: "ai",
+    icon: "Cpu",
+    description: "LLM",
+    inputs: [
+      {
+        key: "op",
+        label: "Operation",
+        type: "select",
+        defaultValue: "Chat Completion",
+        options: ["Chat Completion", "Image Generation", "Embeddings"],
+      },
+      {
+        key: "model",
+        label: "Model",
+        type: "select",
+        defaultValue: "gpt-4o",
+        options: [
+          "gpt-4o",
+          "gpt-4o-mini",
+          "gpt-4.1",
+          "gpt-4.1 mini",
+          "gemini-2.5-pro",
+          "gemini-3-flash-preview",
+          "gemini-2.5-flash",
+        ],
+      },
+      {
+        key: "systemPrompt",
+        label: "System Prompt",
+        type: "textarea",
+        placeholder: "You are a helpful assistant...",
+        defaultValue: "You are a helpful assistant.",
+      },
+      {
+        key: "userPrompt",
+        label: "User Prompt",
+        type: "textarea",
+        placeholder: "Analyze the following text: {{loopItem.content}}",
+        helperText: "Use {{variables}} to insert data from previous steps.",
+      },
+      {
+        key: "temp",
+        label: "Temperature",
+        type: "range",
+        defaultValue: 1,
+        min: 0,
+        max: 1,
+      },
+      {
+        key: "boundTools",
+        label: "Bind Tools (Agent Mode)",
+        type: "multiselect",
+        description: "Select tools this LLM is allowed to call.",
+      },
+      {
+        key: "maxRetries",
+        label: "Max API Retries",
+        type: "number",
+        defaultValue: "3",
+        placeholder: "e.g. 3",
+        helperText: "How many times to retry on 500/RateLimit errors.",
+      },
+      {
+        key: "maxIterations",
+        label: "Max Agent Steps",
+        type: "number",
+        defaultValue: "2",
+        placeholder: "e.g. 2",
+        helperText: "Prevent the Agent from looping infinitely.",
+      },
+      {
+        key: "jsonMode",
+        label: "JSON Mode",
+        type: "boolean",
+        defaultValue: false,
+      },
+      {
+        key: "outputFields",
+        label: "Structured Output (JSON Schema)",
+        type: "field_list",
+        description:
+          "Define the fields you want the AI to extract. If empty, returns plain text.",
+        subFields: [
+          {
+            key: "name",
+            label: "Key Name",
+            type: "text",
+            placeholder: "e.g. sentiment",
+            defaultValue: "",
+          },
+          {
+            key: "type",
+            label: "Data Type",
+            type: "select",
+            options: ["string", "number", "boolean"],
+            defaultValue: "string",
+          },
+          {
+            key: "description",
+            label: "Description",
+            type: "text",
+            placeholder: "Instructions for the AI...",
+            defaultValue: "",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    type: "agent_researcher",
+    label: "Deep Researcher",
+    category: "ai",
+    icon: "Globe",
+    description:
+      "Autonomous LangGraph agent that searches the web and synthesizes findings.",
+    inputs: [
+      {
+        key: "model",
+        label: "Reasoning Model",
+        type: "select",
+        defaultValue: "gpt-4o",
+        options: ["gpt-4o", "gpt-4.1", "gemini-2.5-pro"],
+        helperText:
+          "Complex research requires smarter models (GPT-4o recommended).",
+      },
+      {
+        key: "topic",
+        label: "Research Topic / Query",
+        type: "textarea",
+        placeholder:
+          "e.g. Find the latest stock price and news for {{loopItem.company}}...",
+        helperText:
+          "Describe exactly what you want the agent to find. Supports {{variables}}.",
+      },
+      {
+        key: "maxIterations",
+        label: "Max Loop Steps",
+        type: "number",
+        defaultValue: "3",
+        placeholder: "3",
+        helperText:
+          "Safety limit. Determines how many times the agent can search & read before forcing an answer.",
+      },
+      {
+        key: "searchProvider",
+        label: "Search Provider",
+        type: "select",
+        defaultValue: "Tavily",
+        options: ["Tavily", "Google Serper", "Bing"],
+        helperText:
+          "Ensure the API key for the selected provider is set in your .env",
+      },
+    ],
+  },
+];
