@@ -1,12 +1,12 @@
 import { memo } from "react";
-import type { NodeProps } from "postcss";
+import { type NodeProps, type Node } from "@xyflow/react";
 import { Bot, Clock, Mail } from "lucide-react";
 import { Handle, Position } from "@xyflow/react";
 
 import { StatusIcon } from "./StatusIcon";
 import { getStatusStyle } from "./helpers";
 
-export const DynamicNode = memo(({ data, selected }: NodeProps) => {
+export const DynamicNode = memo(({ data, selected }: NodeProps<Node>) => {
   const statusClass = getStatusStyle(data.status as string);
   const isSelected = selected ? "ring-2 ring-purple-500" : "";
 

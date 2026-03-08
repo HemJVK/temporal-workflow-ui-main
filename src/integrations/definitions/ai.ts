@@ -23,11 +23,13 @@ export const aiIntegrations: IntegrationSchema[] = [
         options: [
           "gpt-4o",
           "gpt-4o-mini",
-          "gpt-4.1",
-          "gpt-4.1 mini",
           "gemini-2.5-pro",
-          "gemini-3-flash-preview",
           "gemini-2.5-flash",
+          "claude-3-5-sonnet-20240620",
+          "claude-3-opus-20240229",
+          "llama3-70b-8192",
+          "mixtral-8x7b-32768",
+          "openai-gpt-oss-20b"
         ],
       },
       {
@@ -57,6 +59,12 @@ export const aiIntegrations: IntegrationSchema[] = [
         label: "Bind Tools (Agent Mode)",
         type: "multiselect",
         description: "Select tools this LLM is allowed to call.",
+      },
+      {
+        key: "mcpServers",
+        label: "Bind MCP Plugins",
+        type: "mcp_select",
+        description: "Select installed MCP plugins for this Agent."
       },
       {
         key: "maxRetries",
@@ -125,7 +133,13 @@ export const aiIntegrations: IntegrationSchema[] = [
         label: "Reasoning Model",
         type: "select",
         defaultValue: "gpt-4o",
-        options: ["gpt-4o", "gpt-4.1", "gemini-2.5-pro"],
+        options: [
+          "gpt-4o",
+          "gemini-2.5-pro",
+          "claude-3-5-sonnet-20240620",
+          "claude-3-opus-20240229",
+          "llama3-70b-8192"
+        ],
         helperText:
           "Complex research requires smarter models (GPT-4o recommended).",
       },

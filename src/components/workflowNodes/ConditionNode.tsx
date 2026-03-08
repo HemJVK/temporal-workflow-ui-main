@@ -1,17 +1,16 @@
 import { memo } from "react";
 import { GitFork } from "lucide-react";
-import type { NodeProps } from "postcss";
+import { type NodeProps, type Node } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
 import { getStatusStyle } from "./helpers";
 
-export const ConditionNode = memo(({ data, selected }: NodeProps) => {
+export const ConditionNode = memo(({ data, selected }: NodeProps<Node>) => {
   const statusClass = getStatusStyle(data.status as string);
 
   return (
     <div
-      className={`relative min-w-[250px] rounded-xl border bg-white shadow-sm transition-all duration-300 ${statusClass} ${
-        selected ? "ring-2 ring-purple-500" : ""
-      }`}
+      className={`relative min-w-[250px] rounded-xl border bg-white shadow-sm transition-all duration-300 ${statusClass} ${selected ? "ring-2 ring-purple-500" : ""
+        }`}
     >
       {/* Input Handle */}
       <Handle type="target" position={Position.Top} className="!bg-gray-400" />
@@ -29,11 +28,11 @@ export const ConditionNode = memo(({ data, selected }: NodeProps) => {
 
       {/* Logic Preview */}
       <div className="p-3 bg-gray-50 text-xs font-mono text-center border-b border-gray-100">
-        {(data.config as any)?.variable || "var"}
+        {(data.config as Record<string, unknown>)?.variable as string || "var"}
         <span className="text-orange-600 font-bold mx-1">
-          {(data.config as any)?.operator || "=="}
+          {(data.config as Record<string, unknown>)?.operator as string || "=="}
         </span>
-        {(data.config as any)?.value || "val"}
+        {(data.config as Record<string, unknown>)?.value as string || "val"}
       </div>
 
       {/* Dual Outputs */}

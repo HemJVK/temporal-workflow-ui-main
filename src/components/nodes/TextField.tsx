@@ -8,17 +8,16 @@ export const TextField = ({ field, value, onChange }: FieldProps) => {
         <textarea
           className={`${INPUT_BASE_CLASS} min-h-[100px] resize-none leading-relaxed`}
           placeholder={field.placeholder}
-          value={value || ""}
+          value={(value as string) || ""}
           onChange={(e) => onChange(e.target.value)}
         />
       ) : (
         <input
           type={field.type === "password" ? "password" : "text"}
-          className={`${INPUT_BASE_CLASS} ${
-            field.type === "password" ? "font-mono" : ""
-          }`}
+          className={`${INPUT_BASE_CLASS} ${field.type === "password" ? "font-mono" : ""
+            }`}
           placeholder={field.placeholder}
-          value={value || ""}
+          value={(value as string) || ""}
           onChange={(e) => onChange(e.target.value)}
         />
       )}

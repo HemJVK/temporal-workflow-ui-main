@@ -1,11 +1,11 @@
 import { memo } from "react";
 import { Zap } from "lucide-react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 
 import { StatusIcon } from "./StatusIcon";
 import { getStatusStyle } from "./helpers";
 
-export const StartNode = memo(({ data, selected }: NodeProps) => {
+export const StartNode = memo(({ data, selected }: NodeProps<Node>) => {
   const statusClass = getStatusStyle(data.status as string);
   const isSelected = selected ? "ring-2 ring-purple-500" : "";
 
@@ -25,12 +25,12 @@ export const StartNode = memo(({ data, selected }: NodeProps) => {
 
       <div className="flex flex-col">
         <span className="font-bold text-sm text-gray-800">
-          {data.label || "Start Trigger"}
+          {(data.label as string) || "Start Trigger"}
         </span>
         <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold flex items-center gap-1">
           {data.status === "completed"
             ? "Done"
-            : (data.config as any)?.triggerType || "WEBHOOK"}
+            : (data.config as Record<string, unknown>)?.triggerType as string || "WEBHOOK"}
           <StatusIcon status={data.status as string} />
         </span>
       </div>

@@ -37,7 +37,7 @@ export function useWorkflowStatus(workflowId: string, runId: string) {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [workflowId]);
+  }, [workflowId, runId]);
 
   return statuses;
 }

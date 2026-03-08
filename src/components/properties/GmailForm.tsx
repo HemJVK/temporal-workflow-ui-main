@@ -1,9 +1,9 @@
-import React from "react";
+
 import { Paperclip, AlertCircle } from "lucide-react";
 
 interface GmailFormProps {
-  config: any;
-  onChange: (key: string, value: any) => void;
+  config: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
 }
 
 export default function GmailForm({ config, onChange }: GmailFormProps) {
@@ -16,7 +16,7 @@ export default function GmailForm({ config, onChange }: GmailFormProps) {
         </label>
         <select
           className="w-full p-2 bg-white border border-gray-200 rounded text-sm focus:border-blue-500 outline-none"
-          value={config.operation || "Send Email"}
+          value={(config.operation as string) || "Send Email"}
           onChange={(e) => onChange("operation", e.target.value)}
         >
           <option value="Send Email">Send Email</option>
@@ -32,7 +32,7 @@ export default function GmailForm({ config, onChange }: GmailFormProps) {
         </label>
         <select
           className="w-full p-2 bg-white border border-gray-200 rounded text-sm focus:border-blue-500 outline-none"
-          value={config.account || ""}
+          value={(config.account as string) || ""}
           onChange={(e) => onChange("account", e.target.value)}
         >
           <option value="" disabled>
@@ -53,7 +53,7 @@ export default function GmailForm({ config, onChange }: GmailFormProps) {
           type="text"
           className="w-full p-2 border border-gray-200 rounded text-sm focus:border-blue-500 outline-none"
           placeholder="recipient@example.com"
-          value={config.to || ""}
+          value={(config.to as string) || ""}
           onChange={(e) => onChange("to", e.target.value)}
         />
       </div>
@@ -67,7 +67,7 @@ export default function GmailForm({ config, onChange }: GmailFormProps) {
           type="text"
           className="w-full p-2 border border-gray-200 rounded text-sm focus:border-blue-500 outline-none"
           placeholder="Enter subject..."
-          value={config.subject || ""}
+          value={(config.subject as string) || ""}
           onChange={(e) => onChange("subject", e.target.value)}
         />
       </div>
@@ -80,7 +80,7 @@ export default function GmailForm({ config, onChange }: GmailFormProps) {
         <textarea
           className="w-full p-2 border border-gray-200 rounded text-sm h-32 focus:border-blue-500 outline-none resize-none"
           placeholder="Type your message here..."
-          value={config.body || ""}
+          value={(config.body as string) || ""}
           onChange={(e) => onChange("body", e.target.value)}
         />
       </div>
@@ -92,7 +92,7 @@ export default function GmailForm({ config, onChange }: GmailFormProps) {
         </label>
         <select
           className="w-full p-2 bg-white border border-gray-200 rounded text-sm focus:border-blue-500 outline-none"
-          value={config.contentType || "Plain Text"}
+          value={(config.contentType as string) || "Plain Text"}
           onChange={(e) => onChange("contentType", e.target.value)}
         >
           <option value="Plain Text">Plain Text</option>
@@ -110,7 +110,7 @@ export default function GmailForm({ config, onChange }: GmailFormProps) {
             type="text"
             className="w-full p-2 pl-8 border border-gray-200 rounded text-sm focus:border-blue-500 outline-none"
             placeholder="URL or Variable..."
-            value={config.attachments || ""}
+            value={(config.attachments as string) || ""}
             onChange={(e) => onChange("attachments", e.target.value)}
           />
           <div className="absolute left-2.5 top-2.5 text-gray-400">

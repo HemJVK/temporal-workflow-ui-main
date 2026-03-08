@@ -5,6 +5,7 @@ import { ToggleField } from "./ToggleField";
 import { ListField } from "./ListField";
 import { type FieldProps } from "./common";
 import { MultiSelectField } from "./MultiSelectField";
+import { McpSelectField } from "./McpSelectField";
 
 export const FieldFactory = (props: FieldProps) => {
   const { field } = props;
@@ -28,6 +29,9 @@ export const FieldFactory = (props: FieldProps) => {
       break;
     case "multiselect":
       Component = MultiSelectField;
+      break;
+    case "mcp_select":
+      Component = McpSelectField;
       break;
     default:
       // Keep TextField as fallback

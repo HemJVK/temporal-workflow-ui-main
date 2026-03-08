@@ -1,6 +1,6 @@
 interface AgentFormProps {
-  config: any;
-  onChange: (key: string, value: any) => void;
+  config: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
 }
 
 export default function AgentForm({ config, onChange }: AgentFormProps) {
@@ -13,7 +13,7 @@ export default function AgentForm({ config, onChange }: AgentFormProps) {
         </label>
         <select
           className="w-full p-2 bg-white border border-gray-200 rounded text-sm focus:border-purple-500 outline-none"
-          value={config.model || "gpt-4o"}
+          value={(config.model as string) || "gpt-4o"}
           onChange={(e) => onChange("model", e.target.value)}
         >
           <option value="gpt-4o">OpenAI GPT-4o</option>
@@ -31,7 +31,7 @@ export default function AgentForm({ config, onChange }: AgentFormProps) {
         <textarea
           className="w-full p-2 border border-gray-200 rounded text-sm h-40 font-mono text-xs leading-relaxed focus:border-purple-500 outline-none resize-none"
           placeholder="You are a helpful assistant..."
-          value={config.systemPrompt || ""}
+          value={(config.systemPrompt as string) || ""}
           onChange={(e) => onChange("systemPrompt", e.target.value)}
         />
       </div>
@@ -40,7 +40,7 @@ export default function AgentForm({ config, onChange }: AgentFormProps) {
       <div>
         <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 flex justify-between">
           <span>Temperature</span>
-          <span className="text-gray-900">{config.temp || 1}</span>
+          <span className="text-gray-900">{String(config.temp) || 1}</span>
         </label>
         <input
           type="range"
@@ -48,7 +48,7 @@ export default function AgentForm({ config, onChange }: AgentFormProps) {
           max="1"
           step="0.1"
           className="w-full accent-purple-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-          value={config.temp || 1}
+          value={(config.temp as number) ?? 1}
           onChange={(e) => onChange("temp", parseFloat(e.target.value))}
         />
         <div className="flex justify-between text-[10px] text-gray-400 mt-1">
@@ -68,7 +68,7 @@ export default function AgentForm({ config, onChange }: AgentFormProps) {
         <textarea
           className="w-full p-2 border border-blue-200 rounded text-xs font-mono h-24 focus:border-blue-500 outline-none"
           placeholder='{"type": "object", "properties": {...}}'
-          value={config.schema || ""}
+          value={(config.schema as string) || ""}
           onChange={(e) => onChange("schema", e.target.value)}
         />
       </div>

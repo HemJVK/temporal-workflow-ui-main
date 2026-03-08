@@ -3,7 +3,9 @@ import AgentForm from "./properties/AgentForm";
 import GmailForm from "./properties/GmailForm";
 import GoogleSearchForm from "./properties/GoogleSearchForm";
 
-export default function PropertyPanel({ selectedNode, onChange }: any) {
+import { type Node } from "@xyflow/react";
+
+export default function PropertyPanel({ selectedNode, onChange }: { selectedNode: Node | null, onChange: (key: string, value: unknown) => void }) {
   if (!selectedNode) {
     return (
       <div className="w-96 bg-white border-l border-gray-200 flex flex-col items-center justify-center text-gray-400 text-sm h-full">
@@ -21,7 +23,7 @@ export default function PropertyPanel({ selectedNode, onChange }: any) {
     return "bg-gray-500";
   };
 
-  const typeLabel = selectedNode.data.type.replace("tool_", "").toUpperCase();
+  const typeLabel = (selectedNode.data.type as string).replace("tool_", "").toUpperCase();
 
   return (
     <div className="w-96 bg-gray-50 border-l border-gray-200 flex flex-col h-full shadow-xl z-20 font-sans transition-all duration-300">
@@ -30,15 +32,13 @@ export default function PropertyPanel({ selectedNode, onChange }: any) {
         <div className="flex items-center gap-2 mb-3">
           <span
             className={`text-[10px] font-bold uppercase tracking-wider text-white px-2 py-0.5 rounded shadow-sm ${getTypeColor(
-              selectedNode.data.type
+              selectedNode.data.type as string
             )}`}
           >
             {typeLabel}
           </span>
         </div>
-        <h2 className="font-bold text-xl text-gray-900 leading-tight">
-          {selectedNode.data.label}
-        </h2>
+        {selectedNode.data.label as React.ReactNode}
         <div className="flex items-center gap-2 mt-2">
           <span className="text-[10px] text-gray-400 font-mono bg-gray-100 px-1.5 py-0.5 rounded">
             ID: {selectedNode.id}
@@ -50,33 +50,33 @@ export default function PropertyPanel({ selectedNode, onChange }: any) {
       <div className="flex-1 overflow-y-auto p-6">
         {selectedNode.data.type === "tool_email" && (
           <GmailForm
-            config={selectedNode.data.config || {}}
+            config={(selectedNode.data.config as Record<string, unknown>) || {}}
             onChange={onChange}
           />
         )}
 
         {selectedNode.data.type === "tool_search" && (
           <GoogleSearchForm
-            config={selectedNode.data.config || {}}
+            config={(selectedNode.data.config as Record<string, unknown>) || {}}
             onChange={onChange}
           />
         )}
 
         {selectedNode.data.type === "agent" && (
           <AgentForm
-            config={selectedNode.data.config || {}}
+            config={(selectedNode.data.config as Record<string, unknown>) || {}}
             onChange={onChange}
           />
         )}
 
         {/* Fallback for other nodes */}
         {!["tool_email", "tool_search", "agent"].includes(
-          selectedNode.data.type
+          selectedNode.data.type as string
         ) && (
-          <div className="text-center text-gray-400 mt-10">
-            <p>No configuration available for this block type.</p>
-          </div>
-        )}
+            <div className="text-center text-gray-400 mt-10">
+              <p>No configuration available for this block type.</p>
+            </div>
+          )}
       </div>
     </div>
   );

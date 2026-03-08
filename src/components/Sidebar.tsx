@@ -1,20 +1,46 @@
 import React, { useState, useMemo } from "react";
-import { Search, ChevronsLeft, PanelLeft } from "lucide-react"; // Import Icons
+import { Search, ChevronsLeft, PanelLeft, Globe } from "lucide-react"; // Import Icons
 import { INTEGRATION_REGISTRY } from "../integrations";
 import { BrandIcon } from "./BrandIcon";
 
 interface SidebarProps {
   isCollapsed: boolean;
-  onToggle: () => void; // New Prop
+  onToggle: () => void;
+  onOpenMarketplace: () => void;
 }
 
-export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
+export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: SidebarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [hoveredItem, setHoveredItem] = useState<{
     label: string;
     top: number;
     left: number;
   } | null>(null);
+  const [mcpLoaded, setMcpLoaded] = useState(false);
+
+  React.useEffect(() => {
+    fetch('/api/mcp/servers')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          data.forEach(server => {
+            const type = `tool_mcp_${server.id}`;
+            if (!INTEGRATION_REGISTRY.find(i => i.type === type)) {
+              INTEGRATION_REGISTRY.push({
+                type,
+                label: server.name || server.id,
+                category: "MCP Plugins",
+                icon: "Globe",
+                description: server.description || "MCP Server Plugin",
+                inputs: []
+              });
+            }
+          });
+          setMcpLoaded(true);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   const filteredTools = useMemo(() => {
     const lowerTerm = searchTerm.toLowerCase();
@@ -26,7 +52,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         tool.category.toLowerCase().includes(lowerTerm)
       );
     });
-  }, [searchTerm]);
+  }, [searchTerm, mcpLoaded]);
 
   const onDragStart = (event: React.DragEvent, type: string, label: string) => {
     event.dataTransfer.setData(
@@ -58,9 +84,8 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       >
         {/* TOP ROW: Title + Toggle Button */}
         <div
-          className={`flex items-center ${
-            isCollapsed ? "justify-center w-full" : "justify-between w-full"
-          }`}
+          className={`flex items-center ${isCollapsed ? "justify-center w-full" : "justify-between w-full"
+            }`}
         >
           {!isCollapsed && (
             <h2 className="font-bold text-lg text-gray-800 dark:text-gray-100 truncate">
@@ -98,9 +123,8 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
       {/* TOOL LIST */}
       <div
-        className={`flex-1 overflow-y-auto custom-scrollbar ${
-          isCollapsed ? "p-2 space-y-4 mt-2" : "p-3 space-y-2"
-        }`}
+        className={`flex-1 overflow-y-auto custom-scrollbar ${isCollapsed ? "p-2 space-y-4 mt-2" : "p-3 space-y-2"
+          }`}
       >
         {filteredTools.map((tool) => {
           return (
@@ -109,10 +133,9 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               className={`
                 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg cursor-move 
                 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all group select-none
-                ${
-                  isCollapsed
-                    ? "p-3 flex justify-center aspect-square items-center"
-                    : "p-3 flex items-center gap-3"
+                ${isCollapsed
+                  ? "p-3 flex justify-center aspect-square items-center"
+                  : "p-3 flex items-center gap-3"
                 }
               `}
               draggable
@@ -141,6 +164,17 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             </div>
           );
         })}
+      </div>
+
+      <div className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+        <button
+          onClick={onOpenMarketplace}
+          className={`w-full flex items-center justify-center gap-2 p-2 rounded-lg font-medium transition-all ${isCollapsed ? 'bg-transparent hover:bg-blue-50 text-blue-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50'}`}
+          title="MCP Marketplace"
+        >
+          <Globe size={18} />
+          {!isCollapsed && <span>MCP Plugins</span>}
+        </button>
       </div>
 
       {/* HOVER TOOLTIP */}

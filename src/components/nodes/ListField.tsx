@@ -8,8 +8,8 @@ export const ListField = ({ field, value, onChange }: FieldProps) => {
     // Create new item based on subFields structure
     const newItem =
       field.subFields?.reduce(
-        (acc: any, curr: any) => ({ ...acc, [curr.key]: "" }),
-        {}
+        (acc, curr) => ({ ...acc, [curr.key]: "" }),
+        {} as Record<string, unknown>
       ) || {};
     onChange([...items, newItem]);
   };
@@ -33,7 +33,7 @@ export const ListField = ({ field, value, onChange }: FieldProps) => {
       </div>
 
       <div className="space-y-3">
-        {items.map((item: any, i: number) => (
+        {items.map((item: Record<string, unknown>, i: number) => (
           <div
             key={i}
             className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 relative"
@@ -46,12 +46,12 @@ export const ListField = ({ field, value, onChange }: FieldProps) => {
             </button>
 
             <div className="space-y-2 pr-4">
-              {field.subFields?.map((sub: any) => (
+              {field.subFields?.map((sub) => (
                 <div key={sub.key} className="flex flex-col gap-1">
                   <input
                     className={`${INPUT_BASE_CLASS} py-1.5 text-xs`}
-                    placeholder={sub.placeholder || sub.label}
-                    value={item[sub.key] || ""}
+                    placeholder={(sub.placeholder) || (sub.label)}
+                    value={(item[sub.key] as string) || ""}
                     onChange={(e) => updateItem(i, sub.key, e.target.value)}
                   />
                 </div>

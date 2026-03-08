@@ -4,12 +4,14 @@ export const MultiSelectField = ({ field, value, onChange }: FieldProps) => {
   const selected = Array.isArray(value) ? value : [];
 
   // Define available tools (In a real app, fetch this from API)
-  const options = field.options || [
-    { value: "query_db_postgres", label: "Postgres DB" },
-    { value: "send_sms_twilio", label: "Twilio SMS" },
-    { value: "send_email_sendgrid", label: "SendGrid Email" },
-    { value: "make_http_call", label: "HTTP Request" },
-  ];
+  const options = field.options
+    ? field.options.map((o: string) => ({ value: o, label: o }))
+    : [
+      { value: "query_db_postgres", label: "Postgres DB" },
+      { value: "send_sms_twilio", label: "Twilio SMS" },
+      { value: "send_email_sendgrid", label: "SendGrid Email" },
+      { value: "make_http_call", label: "HTTP Request" },
+    ];
 
   const toggle = (val: string) => {
     if (selected.includes(val)) {
@@ -23,7 +25,7 @@ export const MultiSelectField = ({ field, value, onChange }: FieldProps) => {
     <div className="group">
       <label className={LABEL_CLASS}>{field.label}</label>
       <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 max-h-40 overflow-y-auto">
-        {options.map((opt: any) => (
+        {options.map((opt: { value: string; label: string }) => (
           <label
             key={opt.value}
             className="flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"

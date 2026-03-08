@@ -1,18 +1,17 @@
 import { memo } from "react";
 import { GitMerge } from "lucide-react";
-import type { NodeProps } from "postcss";
+import { type NodeProps, type Node } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
 import { getStatusStyle } from "./helpers";
 
-export const ParallelNode = memo(({ data, selected }: NodeProps) => {
+export const ParallelNode = memo(({ data, selected }: NodeProps<Node>) => {
   const statusClass = getStatusStyle(data.status as string);
-  const branches = (data.config as any)?.branches || [];
+  const branches = (data.config as Record<string, unknown>)?.branches as Record<string, unknown>[] || [];
 
   return (
     <div
-      className={`relative min-w-[280px] bg-white rounded-xl border-2 shadow-sm transition-all duration-200 ${statusClass} ${
-        selected ? "border-pink-500 ring-2 ring-pink-200" : "border-gray-200"
-      }`}
+      className={`relative min-w-[280px] bg-white rounded-xl border-2 shadow-sm transition-all duration-200 ${statusClass} ${selected ? "border-pink-500 ring-2 ring-pink-200" : "border-gray-200"
+        }`}
     >
       <Handle
         type="target"
@@ -35,18 +34,18 @@ export const ParallelNode = memo(({ data, selected }: NodeProps) => {
 
       {/* Dynamic Handles */}
       <div className="py-2 flex flex-col gap-1">
-        {branches.map((branch: any) => (
+        {branches.map((branch: Record<string, unknown>) => (
           <div
-            key={branch.id}
+            key={branch.id as string}
             className="relative group flex items-center justify-end px-4 py-2 hover:bg-gray-50"
           >
             <span className="text-xs font-bold text-gray-600 mr-3">
-              {branch.label}
+              {branch.label as string}
             </span>
             <Handle
               type="source"
               position={Position.Right}
-              id={branch.id}
+              id={branch.id as string}
               className="!w-3 !h-3 !bg-pink-500 border-2 border-white"
               style={{ right: -7 }}
             />

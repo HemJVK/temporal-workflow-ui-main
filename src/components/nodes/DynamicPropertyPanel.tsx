@@ -9,7 +9,7 @@ export default function DynamicPropertyPanel({
   selectedNode,
   onChange,
   onClose,
-}: any) {
+}: { selectedNode: Record<string, unknown> | null, onChange: (key: string, value: unknown) => void, onClose: () => void }) {
   // 1. Empty State
   if (!selectedNode) {
     return (
@@ -32,10 +32,10 @@ export default function DynamicPropertyPanel({
   }
 
   // 2. Load Schema & Config
-  const schema = getSchema(selectedNode.data.type);
-  const config = selectedNode.data.config || {};
+  const schema = getSchema((selectedNode.data as Record<string, unknown>).type as string);
+  const config = (selectedNode.data as Record<string, unknown>).config as Record<string, unknown> || {};
 
-  const handleFieldChange = (key: string, value: any) => {
+  const handleFieldChange = (key: string, value: unknown) => {
     onChange(key, value);
   };
 
@@ -46,20 +46,20 @@ export default function DynamicPropertyPanel({
 
     // --- A. Specific Overrides (Custom Forms) ---
 
-    if (selectedNode.data.type === "logic_router") {
+    if ((selectedNode.data as Record<string, unknown>).type === "logic_router") {
       return <RouterConfig config={config} onChange={onChange} />;
     }
 
     // Explicit check for Special Config Components
-    if (selectedNode.data.type === "make_http_call") {
+    if ((selectedNode.data as Record<string, unknown>).type === "make_http_call") {
       return <HttpConfig config={config} onChange={onChange} />;
     }
 
-    if (selectedNode.data.type === "logic_loop") {
+    if ((selectedNode.data as Record<string, unknown>).type === "logic_loop") {
       return <LoopConfig config={config} onChange={onChange} />;
     }
 
-    if (selectedNode.data.type === "trigger_end") {
+    if ((selectedNode.data as Record<string, unknown>).type === "trigger_end") {
       return (
         <div className="flex flex-col gap-4">
           <div>
@@ -69,7 +69,7 @@ export default function DynamicPropertyPanel({
             <textarea
               className="w-full border p-2 rounded text-sm mt-1 h-32 font-mono"
               placeholder='{ "result": "{{ai_agent.answer}}" }'
-              value={config.output || ""}
+              value={(config.output as string) || ""}
               onChange={(e) => onChange("output", e.target.value)}
             />
             <p className="text-[10px] text-gray-400 mt-1">

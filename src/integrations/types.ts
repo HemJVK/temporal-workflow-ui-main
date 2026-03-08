@@ -15,6 +15,7 @@ import {
   Code,
   Zap,
 } from "lucide-react";
+import type { ElementType } from "react";
 
 export type FieldType =
   | "text"
@@ -28,6 +29,7 @@ export type FieldType =
   | "field_list"
   | "logic_loop"
   | "make_http_call"
+  | "mcp_select"
   | "json";
 
 export interface IntegrationField {
@@ -37,7 +39,7 @@ export interface IntegrationField {
   placeholder?: string;
   options?: string[];
   helperText?: string;
-  defaultValue?: any;
+  defaultValue?: unknown;
   subFields?: IntegrationField[];
   description?: string;
   min?: number;
@@ -55,7 +57,7 @@ export interface IntegrationSchema {
 }
 
 // Map strings to actual Icon Components for the UI to use
-export const ICON_MAP: Record<string, any> = {
+export const ICON_MAP: Record<string, ElementType> = {
   Bot,
   Mail,
   Search,

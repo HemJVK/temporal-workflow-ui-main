@@ -8,7 +8,7 @@ export const SelectField = ({ field, value, onChange }: FieldProps) => {
       <div className="relative">
         <select
           className={`${INPUT_BASE_CLASS} appearance-none cursor-pointer`}
-          value={value || field.defaultValue || ""}
+          value={(value as string) || (field.defaultValue as string) || ""}
           onChange={(e) => onChange(e.target.value)}
         >
           {field.options?.map((opt) => (

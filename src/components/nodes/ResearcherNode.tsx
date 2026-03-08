@@ -1,6 +1,6 @@
 interface ConfigProps {
-  config: any;
-  onChange: (key: string, value: any) => void;
+  config: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
 }
 
 export const ResearcherNode = ({ config = {}, onChange }: ConfigProps) => {
@@ -18,7 +18,7 @@ export const ResearcherNode = ({ config = {}, onChange }: ConfigProps) => {
         <textarea
           className="w-full border p-2 rounded text-sm mt-1 h-32"
           placeholder="e.g. Current stock price of {{loopItem.company}} and recent news."
-          value={config?.topic || ""}
+          value={(config?.topic as string) || ""}
           onChange={(e) => onChange("topic", e.target.value)}
         />
       </div>

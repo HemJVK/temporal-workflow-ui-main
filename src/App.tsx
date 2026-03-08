@@ -9,6 +9,7 @@ import {
   ReactFlowProvider,
   type Connection,
   type Node,
+  type Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
@@ -20,10 +21,14 @@ import {
   FolderOpen,
   ExternalLink,
   Activity,
+  Download,
+  Upload,
 } from "lucide-react";
-import { SavedWorkflowsList } from "./components/SavedWorkflowsList";
-
+import { SavedWorkflowsList, SAMPLE_WORKFLOWS } from "./components/SavedWorkflowsList";
+import McpMarketplace from "./components/McpMarketplace";
 import Sidebar from "./components/Sidebar";
+import { useUndoRedo } from "./hooks/useUndoRedo";
+import { useClipboard } from "./hooks/useClipboard";
 import { HttpNode } from "./components/workflowNodes/HttpNode";
 import { LoopNode } from "./components/workflowNodes/LoopNode";
 import { RouterNode } from "./components/workflowNodes/RouterNode";
@@ -87,10 +92,12 @@ const AppContent = () => {
   const [isDeploying, setIsDeploying] = useState(false);
   const [id, setId] = useState<string>("");
   const [workflowId, setWorkflowId] = useState<string>("");
-  const [runId, setRunId] = useState<string>("");
+  const [, setRunId] = useState<string>("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [showSavedList, setShowSavedList] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showMarketplace, setShowMarketplace] = useState(false);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -101,9 +108,72 @@ const AppContent = () => {
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [workflowName, setWorkflowName] = useState("Untitled Workflow");
+
+  const { takeSnapshot } = useUndoRedo(nodes, edges, setNodes, setEdges);
+  const { copy, paste, cut, duplicate } = useClipboard(setNodes, setEdges, takeSnapshot);
+
+  // Load from URL Query Parameter immediately on mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlWorkflowId = searchParams.get('workflowId');
+    if (urlWorkflowId) {
+      const templateMatch = SAMPLE_WORKFLOWS.find((wf) => wf.id === urlWorkflowId);
+      if (templateMatch) {
+        setNodes((templateMatch.nodes as Node[]) || []);
+        setEdges((templateMatch.edges as Edge[]) || []);
+        setWorkflowName((templateMatch.name as string) || "Untitled Workflow");
+        setWorkflowId(templateMatch.workflowId as string);
+      } else {
+        fetch(`/api/workflows/${urlWorkflowId}`)
+          .then(res => {
+            if (!res.ok) throw new Error("Workflow not found");
+            return res.json();
+          })
+          .then(data => {
+            setNodes((data.nodes as Node[]) || []);
+            setEdges((data.edges as Edge[]) || []);
+            setWorkflowName((data.name as string) || "Untitled Workflow");
+            setWorkflowId(data.workflowId as string);
+          })
+          .catch(err => console.error(err));
+      }
+    }
+  }, [setNodes, setEdges]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable) {
+        return; // Do not trigger map actions when typing in a form
+      }
+
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const cmdKey = isMac ? e.metaKey : e.ctrlKey;
+
+      if (cmdKey && e.key.toLowerCase() === 'c') {
+        const selectedNodes = nodes.filter(n => n.selected);
+        const selectedEdges = edges.filter(e => e.selected);
+        copy(selectedNodes, selectedEdges);
+      } else if (cmdKey && e.key.toLowerCase() === 'x') {
+        const selectedNodes = nodes.filter(n => n.selected);
+        const selectedEdges = edges.filter(e => e.selected);
+        cut(selectedNodes, selectedEdges);
+      } else if (cmdKey && e.key.toLowerCase() === 'v') {
+        paste();
+      } else if (cmdKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault(); // Prevent default browser bookmark or other actions
+        const selectedNodes = nodes.filter(n => n.selected);
+        const selectedEdges = edges.filter(e => e.selected);
+        duplicate(selectedNodes, selectedEdges);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [nodes, edges, copy, paste, cut, duplicate]);
 
   const openTemporalHistory = () => {
     // 1. Detect Environment
@@ -128,6 +198,7 @@ const AppContent = () => {
 
   const onConnect = useCallback(
     (params: Connection) => {
+      takeSnapshot();
       setEdges((eds) =>
         addEdge(
           {
@@ -139,7 +210,7 @@ const AppContent = () => {
         )
       );
     },
-    [setEdges]
+    [setEdges, takeSnapshot]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -173,16 +244,20 @@ const AppContent = () => {
         defaultConfig = { to: "{{loopItem.mobile}}" };
       }
 
+      const isRegistered = Object.keys(nodeTypes).includes(type);
+      const flowNodeType = isRegistered ? type : "default";
+
       const newNode: Node = {
         id: `${type}_${Date.now()}`,
-        type: type,
+        type: flowNodeType,
         position,
         data: { label, type, config: defaultConfig, status: "idle" },
       };
 
+      takeSnapshot();
       setNodes((nds) => nds.concat(newNode));
     },
-    [setNodes]
+    [setNodes, reactFlowWrapper, nodeTypes, takeSnapshot]
   );
 
   const onNodeClick = (_: React.MouseEvent, node: Node) => {
@@ -190,7 +265,7 @@ const AppContent = () => {
     setIsPanelOpen(true);
   };
 
-  const onConfigChange = (key: string, value: any) => {
+  const onConfigChange = (key: string, value: unknown) => {
     setNodes((nodes) =>
       nodes.map((node) => {
         if (node.id === selectedNodeId) {
@@ -198,7 +273,7 @@ const AppContent = () => {
             ...node,
             data: {
               ...node.data,
-              config: { ...node.data.config, [key]: value },
+              config: { ...(typeof node.data.config === "object" && node.data.config !== null ? node.data.config : {}), [key]: value },
             },
           };
         }
@@ -221,14 +296,22 @@ const AppContent = () => {
       if (!startNode) throw new Error("Workflow must have a Start Trigger");
 
       // Initialize Steps Dictionary
-      const steps: Record<string, any> = {};
+      interface WorkflowStep {
+        id: string;
+        name: string;
+        type: string;
+        params: Record<string, unknown>;
+        next: string | null;
+        branches: Record<string, string>;
+      }
+      const steps: Record<string, WorkflowStep> = {};
 
       nodes.forEach((node) => {
         steps[node.id] = {
           id: node.id,
-          name: node.data.label,
-          type: node.data.type,
-          params: node.data.config || {},
+          name: node.data.label as string,
+          type: node.data.type as string,
+          params: (node.data.config as Record<string, unknown>) || {},
           next: null, // Default linear path
           branches: {}, // Map for Router/Condition paths (HandleID -> NodeID)
         };
@@ -304,27 +387,21 @@ const AppContent = () => {
       } else {
         alert("Workflow deployed but no ID returned");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      alert(`❌ Deployment Failed: ${error.message}`);
+      alert(`❌ Deployment Failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsDeploying(false);
     }
   };
 
-  const onSave = async () => {
-    const name = prompt(
-      "Enter workflow name:",
-      `Workflow ${new Date().toLocaleTimeString()}`
-    );
-    if (!name) return;
-
+  const onSaveDatabase = async () => {
     try {
       const response = await fetch("/api/workflows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
+          name: workflowName,
           nodes, // React Flow nodes state
           edges, // React Flow edges state
         }),
@@ -334,24 +411,108 @@ const AppContent = () => {
         const resp = await response.json();
         setId(resp.id);
         setWorkflowId(resp.workflowId);
-        alert("✅ Workflow Saved!");
+        alert("✅ Workflow Saved to Database!");
+        setShowSaveModal(false);
+      } else {
+        alert("❌ Failed to save to database");
       }
-    } catch (e) {
-      alert("❌ Failed to save");
+    } catch {
+      alert("❌ Failed to save to database");
+    }
+  };
+
+  const onSaveLocal = async () => {
+    try {
+      const response = await fetch("/api/workflows/export-local", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: workflowName,
+          nodes,
+          edges,
+        }),
+      });
+
+      if (response.ok) {
+        const resp = await response.json();
+        alert(`✅ Locally saved to: ${resp.path}`);
+        setShowSaveModal(false);
+      } else {
+        alert("❌ Failed to export locally");
+      }
+    } catch {
+      alert("❌ Failed to export locally");
     }
   };
 
   // --- LOAD FUNCTION ---
-  const onLoadWorkflow = (workflowData: any) => {
-    // 1. Restore Nodes and Edges
-    console.log("Loading workflow:", workflowData);
-    setNodes(workflowData.nodes || []);
-    setEdges(workflowData.edges || []);
-    setWorkflowName(workflowData.name || "Untitled Workflow");
-    setWorkflowId(workflowData.workflowId);
+  const onLoadWorkflow = (workflowData: Record<string, unknown>) => {
+    console.log("Loading workflow (appending):", workflowData);
+
+    const incomingNodes = (workflowData.nodes as Node[]) || [];
+    const incomingEdges = (workflowData.edges as Edge[]) || [];
+
+    const idMap = new Map<string, string>();
+    const newNodes = incomingNodes.map((node) => {
+      const newId = `${node.type}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      idMap.set(node.id, newId);
+      return {
+        ...node,
+        id: newId,
+        position: { x: node.position.x + 50, y: node.position.y + 50 },
+        selected: true,
+      };
+    });
+
+    const newEdges = incomingEdges.map((edge) => {
+      const source = idMap.get(edge.source) || edge.source;
+      const target = idMap.get(edge.target) || edge.target;
+      return {
+        ...edge,
+        id: `e_${source}_${target}`,
+        source,
+        target,
+        selected: true,
+      };
+    });
+
+    // 1. Append Nodes and Edges
+    takeSnapshot();
+    setNodes((nds) => nds.map((n) => ({ ...n, selected: false } as Node)).concat(newNodes));
+    setEdges((eds) => eds.map((e) => ({ ...e, selected: false } as Edge)).concat(newEdges));
+
+    setWorkflowName((workflowData.name as string) || "Untitled Workflow");
+    setWorkflowId(workflowData.workflowId as string);
 
     // 2. Close modal
     setShowSavedList(false);
+  };
+
+  const onExportConfig = () => {
+    const data = { nodes, edges, name: workflowName, workflowId };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${workflowName.replace(/\s+/g, '_')}_config.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const onImportConfig = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        onLoadWorkflow(data);
+      } catch {
+        alert("Failed to parse the configuration file.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Reset input
   };
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
@@ -393,12 +554,29 @@ const AppContent = () => {
 
           {/* SAVE BUTTON */}
           <button
-            onClick={onSave}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-sm font-medium mr-2"
+            onClick={() => setShowSaveModal(true)}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-sm font-medium"
           >
             <Save size={18} />
             <span className="hidden sm:inline">Save</span>
           </button>
+
+          {/* EXPORT BUTTON */}
+          <button
+            onClick={onExportConfig}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-sm font-medium"
+            title="Export workflow config to JSON"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+
+          {/* IMPORT BUTTON */}
+          <label className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-sm font-medium cursor-pointer mr-2">
+            <Upload size={18} />
+            <span className="hidden sm:inline">Import</span>
+            <input type="file" accept=".json" className="hidden" onChange={onImportConfig} />
+          </label>
 
           <button
             onClick={onDeploy}
@@ -441,6 +619,7 @@ const AppContent = () => {
           <Sidebar
             isCollapsed={!isSidebarOpen}
             onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+            onOpenMarketplace={() => setShowMarketplace(true)}
           />
         </div>
 
@@ -453,6 +632,11 @@ const AppContent = () => {
             />
           )}
 
+          <McpMarketplace
+            isOpen={showMarketplace}
+            onClose={() => setShowMarketplace(false)}
+          />
+
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -462,7 +646,11 @@ const AppContent = () => {
             onNodeClick={onNodeClick}
             onDragOver={onDragOver}
             onDrop={onDrop}
+            onNodeDragStart={takeSnapshot}
+            onNodesDelete={takeSnapshot}
+            onEdgesDelete={takeSnapshot}
             nodeTypes={nodeTypes}
+            deleteKeyCode={['Backspace', 'Delete']}
             fitView
             minZoom={0.1}
           >
@@ -473,6 +661,53 @@ const AppContent = () => {
             />
             <Controls className="dark:bg-gray-800 dark:border-gray-700 dark:fill-white shadow-xl bg-white fill-gray-900" />
           </ReactFlow>
+
+          {/* SAVE MODAL */}
+          {showSaveModal && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-2xl w-96 transform transition-all border border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Save Workspace</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Workspace Name
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none"
+                      value={workflowName}
+                      onChange={(e) => setWorkflowName(e.target.value)}
+                      placeholder="e.g. My Custom Workflow"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2 pt-2">
+                    <button
+                      onClick={onSaveDatabase}
+                      className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors font-medium"
+                    >
+                      <Save size={16} /> Save to Database
+                    </button>
+
+                    <button
+                      onClick={onSaveLocal}
+                      className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-gray-800 hover:bg-black dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded transition-colors font-medium"
+                    >
+                      <Download size={16} /> Save Local Workspace
+                    </button>
+
+                    <button
+                      onClick={() => setShowSaveModal(false)}
+                      className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 dark:bg-gray-900 dark:hover:bg-black text-gray-700 dark:text-gray-300 rounded transition-colors mt-2"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* RIGHT PANEL */}
@@ -484,7 +719,7 @@ const AppContent = () => {
         >
           <div className="w-96 h-full">
             <DynamicPropertyPanel
-              selectedNode={selectedNode}
+              selectedNode={selectedNode || null}
               onChange={onConfigChange}
               onClose={() => setIsPanelOpen(false)}
             />

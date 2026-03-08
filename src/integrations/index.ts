@@ -1,7 +1,6 @@
 import { type IntegrationSchema, ICON_MAP } from "./types";
 
 // Import all category files
-import { communicationIntegrations } from "./definitions/communication";
 import { dataIntegrations } from "./definitions/data";
 import { aiIntegrations } from "./definitions/ai";
 import { logicIntegrations } from "./definitions/logic";
@@ -45,7 +44,6 @@ const triggerEnd: IntegrationSchema = {
 export const INTEGRATION_REGISTRY: IntegrationSchema[] = [
   triggerDefinition,
   triggerEnd,
-  ...communicationIntegrations,
   ...dataIntegrations,
   ...aiIntegrations,
   ...logicIntegrations,

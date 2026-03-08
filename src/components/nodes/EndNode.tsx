@@ -1,13 +1,12 @@
 import { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { Flag } from "lucide-react";
 
-export const EndNode = memo(({ data, selected }: NodeProps) => {
+export const EndNode = memo(({ data, selected }: NodeProps<Node>) => {
   return (
     <div
-      className={`relative min-w-[200px] bg-white rounded-xl border-2 shadow-sm transition-all duration-200 ${
-        selected ? "border-red-500 ring-2 ring-red-200" : "border-gray-200"
-      }`}
+      className={`relative min-w-[200px] bg-white rounded-xl border-2 shadow-sm transition-all duration-200 ${selected ? "border-red-500 ring-2 ring-red-200" : "border-gray-200"
+        }`}
     >
       <Handle
         type="target"
@@ -32,7 +31,7 @@ export const EndNode = memo(({ data, selected }: NodeProps) => {
           Return Value
         </div>
         <div className="text-xs text-gray-700 truncate font-mono bg-gray-50 p-1 rounded">
-          {(data.config as any)?.output || "Full State"}
+          {((data.config as Record<string, unknown>)?.output as string) || "Full State"}
         </div>
       </div>
     </div>

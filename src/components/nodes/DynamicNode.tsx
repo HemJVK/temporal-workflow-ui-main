@@ -1,15 +1,16 @@
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { getSchema, ICON_MAP } from "../../integrations";
 
-export const DynamicNode = ({ data, selected }: NodeProps) => {
+export const DynamicNode = ({ data, selected }: NodeProps<Node>) => {
+  const d = data as Record<string, unknown>;
   // 1. Lookup the definition
-  const schema = getSchema(data.type);
+  const schema = getSchema(d.type as string);
 
   // Fallback if schema is missing
   if (!schema)
     return (
       <div className="p-2 border border-red-500 bg-red-50">
-        Unknown: {data.type}
+        Unknown: {String(d.type)}
       </div>
     );
 
@@ -45,11 +46,10 @@ export const DynamicNode = ({ data, selected }: NodeProps) => {
 
   return (
     <div
-      className={`relative min-w-[240px] rounded-xl border-2 bg-white shadow-sm transition-all duration-300 ${
-        selected
-          ? "ring-2 ring-purple-500 border-transparent"
-          : "border-gray-200"
-      } ${data.status === "running" ? "animate-pulse border-blue-400" : ""}`}
+      className={`relative min-w-[240px] rounded-xl border-2 bg-white shadow-sm transition-all duration-300 ${selected
+        ? "ring-2 ring-purple-500 border-transparent"
+        : "border-gray-200"
+        } ${d.status === "running" ? "animate-pulse border-blue-400" : ""}`}
     >
       {/* ---------------- INPUT HANDLE ---------------- */}
       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
@@ -69,7 +69,7 @@ export const DynamicNode = ({ data, selected }: NodeProps) => {
         </div>
         <div className="flex-1">
           <div className="text-sm font-bold text-gray-800 leading-tight">
-            {data.label || schema.label}
+            {String(d.label) || schema.label}
           </div>
           <div className="text-[10px] uppercase font-semibold opacity-60 tracking-wider">
             {schema.category}
@@ -83,12 +83,12 @@ export const DynamicNode = ({ data, selected }: NodeProps) => {
           // MODE A: Condition Preview
           <div className="text-xs font-mono text-center bg-gray-50 p-2 rounded border border-gray-100">
             <span className="text-gray-600">
-              {data.config?.variable || "?"}
+              {((d.config as Record<string, unknown>)?.variable as string) || "?"}
             </span>
             <span className="font-bold text-orange-600 mx-2">
-              {data.config?.operator || "=="}
+              {((d.config as Record<string, unknown>)?.operator as string) || "=="}
             </span>
-            <span className="text-gray-800">{data.config?.value || "?"}</span>
+            <span className="text-gray-800">{((d.config as Record<string, unknown>)?.value as string) || "?"}</span>
           </div>
         ) : (
           // MODE B: Standard Generic Preview (First Input)
@@ -96,7 +96,7 @@ export const DynamicNode = ({ data, selected }: NodeProps) => {
             <div className="text-xs text-gray-500">
               {schema.inputs[0].label}:{" "}
               <span className="font-medium text-gray-800">
-                {data.config?.[schema.inputs[0].key] || "-"}
+                {String(((d.config as Record<string, unknown>)?.[schema.inputs[0].key])) || "-"}
               </span>
             </div>
           )

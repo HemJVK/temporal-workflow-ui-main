@@ -2,8 +2,8 @@ import { type IntegrationField } from "../../integrations/types";
 
 export interface FieldProps {
   field: IntegrationField;
-  value: any;
-  onChange: (value: any) => void;
+  value: unknown;
+  onChange: (value: unknown) => void;
 }
 
 export const INPUT_BASE_CLASS =

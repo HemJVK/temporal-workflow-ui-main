@@ -1,9 +1,9 @@
-import React from "react";
+
 import { ExternalLink, AlertCircle } from "lucide-react";
 
 interface GoogleSearchFormProps {
-  config: any;
-  onChange: (key: string, value: any) => void;
+  config: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
 }
 
 export default function GoogleSearchForm({
@@ -22,7 +22,7 @@ export default function GoogleSearchForm({
             type="text"
             className="w-full p-2 pr-8 border border-gray-200 rounded text-sm focus:border-blue-500 outline-none"
             placeholder="e.g. latest tech news"
-            value={config.query || ""}
+            value={(config.query as string) || ""}
             onChange={(e) => onChange("query", e.target.value)}
           />
           <div className="absolute right-2 top-2 text-gray-400 text-[10px] font-bold pointer-events-none mt-0.5">
@@ -49,7 +49,7 @@ export default function GoogleSearchForm({
           type="text"
           className="w-full p-2 border border-gray-200 rounded text-sm font-mono text-xs focus:border-blue-500 outline-none"
           placeholder="0123456789..."
-          value={config.cse_id || ""}
+          value={(config.cse_id as string) || ""}
           onChange={(e) => onChange("cse_id", e.target.value)}
         />
       </div>
@@ -63,7 +63,7 @@ export default function GoogleSearchForm({
           type="password"
           className="w-full p-2 border border-gray-200 rounded text-sm font-mono text-xs focus:border-blue-500 outline-none"
           placeholder="AIzaSy..."
-          value={config.api_key || ""}
+          value={(config.api_key as string) || ""}
           onChange={(e) => onChange("api_key", e.target.value)}
         />
       </div>
@@ -78,7 +78,7 @@ export default function GoogleSearchForm({
           min="1"
           max="10"
           className="w-full p-2 border border-gray-200 rounded text-sm focus:border-blue-500 outline-none"
-          value={config.num_results || 3}
+          value={(config.num_results as number) || 3}
           onChange={(e) => onChange("num_results", parseInt(e.target.value))}
         />
       </div>

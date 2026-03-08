@@ -1,20 +1,19 @@
 import { memo } from "react";
 import { Repeat } from "lucide-react";
-import type { NodeProps } from "postcss";
+import { type NodeProps, type Node } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
 
 import { getStatusStyle } from "./helpers";
 
-export const LoopNode = memo(({ data, selected }: NodeProps) => {
+export const LoopNode = memo(({ data, selected }: NodeProps<Node>) => {
   const statusClass = getStatusStyle(data.status as string);
 
   return (
     <div
-      className={`relative min-w-[250px] bg-white rounded-xl border-2 shadow-sm transition-all duration-200 ${
-        selected
+      className={`relative min-w-[250px] bg-white rounded-xl border-2 shadow-sm transition-all duration-200 ${selected
           ? "border-purple-500 ring-2 ring-purple-200"
           : "border-gray-200"
-      } ${statusClass}`}
+        } ${statusClass}`}
     >
       <Handle
         type="target"
@@ -32,7 +31,7 @@ export const LoopNode = memo(({ data, selected }: NodeProps) => {
           <p className="text-[10px] text-gray-500 uppercase font-semibold">
             Array:{" "}
             <span className="text-purple-600">
-              {(data.config as any)?.variable || "..."}
+              {(data.config as Record<string, unknown>)?.variable as string || "..."}
             </span>
           </p>
         </div>

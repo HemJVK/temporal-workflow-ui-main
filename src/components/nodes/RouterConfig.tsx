@@ -5,10 +5,10 @@ export const RouterConfig = ({
   config,
   onChange,
 }: {
-  config: any;
-  onChange: (k: string, v: any) => void;
+  config: Record<string, unknown>;
+  onChange: (k: string, v: unknown) => void;
 }) => {
-  const routes = config.routes || [];
+  const routes = Array.isArray(config.routes) ? config.routes : [];
 
   const addRoute = () => {
     const newRoute = { id: `r_${Date.now()}`, operator: ">", value: "0" };
@@ -18,14 +18,14 @@ export const RouterConfig = ({
   const removeRoute = (id: string) => {
     onChange(
       "routes",
-      routes.filter((r: any) => r.id !== id)
+      routes.filter((r: Record<string, unknown>) => r.id !== id)
     );
   };
 
-  const updateRoute = (id: string, key: string, val: any) => {
+  const updateRoute = (id: string, key: string, val: unknown) => {
     onChange(
       "routes",
-      routes.map((r: any) => (r.id === id ? { ...r, [key]: val } : r))
+      routes.map((r: Record<string, unknown>) => (r.id === id ? { ...r, [key]: val } : r))
     );
   };
 
@@ -37,7 +37,7 @@ export const RouterConfig = ({
         <input
           className={INPUT_BASE_CLASS}
           placeholder="e.g. lead_score"
-          value={config.variable || ""}
+          value={(config.variable as string) || ""}
           onChange={(e) => onChange("variable", e.target.value)}
         />
       </div>
@@ -46,17 +46,17 @@ export const RouterConfig = ({
       <div>
         <label className={LABEL_CLASS}>Routing Rules</label>
         <div className="space-y-2">
-          {routes.map((route: any) => (
+          {routes.map((route: Record<string, unknown>) => (
             <div
-              key={route.id}
+              key={String(route.id)}
               className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
             >
               <div className="relative w-1/3">
                 <select
                   className="w-full appearance-none bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs rounded px-2 py-1.5 pr-6 cursor-pointer text-gray-700 dark:text-gray-200"
-                  value={route.operator}
+                  value={String(route.operator)}
                   onChange={(e) =>
-                    updateRoute(route.id, "operator", e.target.value)
+                    updateRoute(String(route.id), "operator", e.target.value)
                   }
                 >
                   <option value="==">==</option>
@@ -69,12 +69,12 @@ export const RouterConfig = ({
               <input
                 className="w-1/3 flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs rounded px-2 py-1.5 text-gray-700 dark:text-gray-200"
                 placeholder="Value"
-                value={route.value}
-                onChange={(e) => updateRoute(route.id, "value", e.target.value)}
+                value={String(route.value)}
+                onChange={(e) => updateRoute(String(route.id), "value", e.target.value)}
               />
 
               <button
-                onClick={() => removeRoute(route.id)}
+                onClick={() => removeRoute(String(route.id))}
                 className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
               >
                 <Trash2 size={14} />

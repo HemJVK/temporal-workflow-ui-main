@@ -1,8 +1,8 @@
 import { INPUT_BASE_CLASS, LABEL_CLASS } from "./common";
 
 interface HttpConfigProps {
-  config: any;
-  onChange: (key: string, value: any) => void;
+  config: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
 }
 
 export const HttpConfig = ({ config, onChange }: HttpConfigProps) => {
@@ -14,7 +14,7 @@ export const HttpConfig = ({ config, onChange }: HttpConfigProps) => {
           <label className={LABEL_CLASS}>Method</label>
           <select
             className={`${INPUT_BASE_CLASS} bg-white dark:bg-gray-800`}
-            value={config.method || "GET"}
+            value={(config.method as string) || "GET"}
             onChange={(e) => onChange("method", e.target.value)}
           >
             <option value="GET">GET</option>
@@ -29,7 +29,7 @@ export const HttpConfig = ({ config, onChange }: HttpConfigProps) => {
           <input
             className={INPUT_BASE_CLASS}
             placeholder="https://api.example.com"
-            value={config.url || ""}
+            value={(config.url as string) || ""}
             onChange={(e) => onChange("url", e.target.value)}
           />
         </div>
@@ -41,7 +41,7 @@ export const HttpConfig = ({ config, onChange }: HttpConfigProps) => {
         <textarea
           className={`${INPUT_BASE_CLASS} h-20 font-mono text-xs`}
           placeholder='{ "Content-Type": "application/json" }'
-          value={config.headers || ""}
+          value={(config.headers as string) || ""}
           onChange={(e) => onChange("headers", e.target.value)}
         />
       </div>
@@ -50,19 +50,19 @@ export const HttpConfig = ({ config, onChange }: HttpConfigProps) => {
       {(config.method === "POST" ||
         config.method === "PUT" ||
         config.method === "PATCH") && (
-        <div>
-          <label className={LABEL_CLASS}>JSON Body</label>
-          <textarea
-            className={`${INPUT_BASE_CLASS} h-32 font-mono text-xs`}
-            placeholder='{ "name": "{{loopItem.firstname}}" }'
-            value={config.body || ""}
-            onChange={(e) => onChange("body", e.target.value)}
-          />
-          <p className="text-[10px] text-gray-400 mt-1">
-            Supports variables like <code>{`{{loopItem.name}}`}</code>
-          </p>
-        </div>
-      )}
+          <div>
+            <label className={LABEL_CLASS}>JSON Body</label>
+            <textarea
+              className={`${INPUT_BASE_CLASS} h-32 font-mono text-xs`}
+              placeholder='{ "name": "{{loopItem.firstname}}" }'
+              value={(config.body as string) || ""}
+              onChange={(e) => onChange("body", e.target.value)}
+            />
+            <p className="text-[10px] text-gray-400 mt-1">
+              Supports variables like <code>{`{{loopItem.name}}`}</code>
+            </p>
+          </div>
+        )}
     </div>
   );
 };

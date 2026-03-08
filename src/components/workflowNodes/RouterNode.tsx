@@ -1,11 +1,15 @@
-import { memo, useEffect } from "react";
-import type { NodeProps } from "postcss";
+import { memo, useEffect, useMemo } from "react";
+import { type NodeProps, type Node } from "@xyflow/react";
 import { Network } from "lucide-react";
 import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
 
-export const RouterNode = memo(({ id, data, selected }: NodeProps) => {
+export const RouterNode = memo(({ id, data, selected }: NodeProps<Node>) => {
   const updateNodeInternals = useUpdateNodeInternals();
-  const routes = (data.config as any)?.routes || [];
+  const rawRoutes = (data.config as Record<string, unknown>)?.routes;
+
+  const routes = useMemo(() => {
+    return Array.isArray(rawRoutes) ? rawRoutes : [];
+  }, [rawRoutes]);
 
   // ⚡️ FIX: Notify React Flow whenever the routes change
   useEffect(() => {
@@ -14,11 +18,10 @@ export const RouterNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div
-      className={`relative min-w-[300px] bg-white rounded-xl border-2 shadow-sm transition-all duration-200 ${
-        selected
+      className={`relative min-w-[300px] bg-white rounded-xl border-2 shadow-sm transition-all duration-200 ${selected
           ? "border-indigo-500 ring-2 ring-indigo-200"
           : "border-gray-200"
-      }`}
+        }`}
     >
       {/* INPUT HANDLE (Top) */}
       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -39,7 +42,7 @@ export const RouterNode = memo(({ id, data, selected }: NodeProps) => {
           <p className="text-[10px] text-gray-500 uppercase font-semibold">
             VAR:{" "}
             <span className="text-indigo-600">
-              {(data.config as any)?.variable || "..."}
+              {((data.config as Record<string, unknown>)?.variable as string) || "..."}
             </span>
           </p>
         </div>
@@ -53,13 +56,13 @@ export const RouterNode = memo(({ id, data, selected }: NodeProps) => {
       {/* FOOTER: Horizontal Routes */}
       <div className="flex justify-around items-end px-2 pb-0 bg-gray-50 rounded-b-xl border-t border-gray-100">
         {/* 1. Dynamic Routes */}
-        {routes.map((route: any) => (
+        {routes.map((route: Record<string, unknown>) => (
           <div
-            key={route.id}
+            key={String(route.id)}
             className="flex flex-col items-center gap-2 pb-3 relative group min-w-[60px]"
           >
             <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-1 rounded border border-indigo-200 whitespace-nowrap z-10">
-              {route.operator} {route.value}
+              {String(route.operator)} {String(route.value)}
             </span>
 
             {/* Handle Wrapper to prevent styling conflicts */}
@@ -67,7 +70,7 @@ export const RouterNode = memo(({ id, data, selected }: NodeProps) => {
               <Handle
                 type="source"
                 position={Position.Bottom}
-                id={route.id}
+                id={String(route.id)}
                 className="!w-3 !h-3 !bg-indigo-500 border-2 border-white cursor-pointer"
               />
             </div>

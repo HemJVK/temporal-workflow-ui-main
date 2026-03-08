@@ -1,8 +1,8 @@
 import { INPUT_BASE_CLASS, LABEL_CLASS } from "./common";
 
 interface LoopConfigProps {
-  config: any;
-  onChange: (key: string, value: any) => void;
+  config: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
 }
 
 export const LoopConfig = ({ config, onChange }: LoopConfigProps) => {
@@ -14,7 +14,7 @@ export const LoopConfig = ({ config, onChange }: LoopConfigProps) => {
         <input
           className={INPUT_BASE_CLASS}
           placeholder="e.g. query_db_postgres.rows"
-          value={config.variable || ""}
+          value={(config.variable as string) || ""}
           onChange={(e) => onChange("variable", e.target.value)}
         />
         <p className="text-[10px] text-gray-400 mt-1">
@@ -36,7 +36,7 @@ export const LoopConfig = ({ config, onChange }: LoopConfigProps) => {
       </div>
 
       {/* Batch Size (Only show if Parallel is enabled) */}
-      {config.isParallel && (
+      {Boolean(config.isParallel) && (
         <div>
           <label className={LABEL_CLASS}>Batch Size</label>
           <input
@@ -45,7 +45,7 @@ export const LoopConfig = ({ config, onChange }: LoopConfigProps) => {
             max="100"
             className={INPUT_BASE_CLASS}
             placeholder="10"
-            value={config.batchSize || "10"}
+            value={(config.batchSize as string) || "10"}
             onChange={(e) => onChange("batchSize", e.target.value)}
           />
           <p className="text-[10px] text-gray-400 mt-1">
