@@ -38,8 +38,10 @@ import { DynamicNode } from "./components/workflowNodes/DynamicNode";
 import DynamicPropertyPanel from "./components/nodes/DynamicPropertyPanel";
 import { EndNode } from "./components/nodes/EndNode";
 
-// 2. REGISTER THE NODE TYPES
-// This tells React Flow: "When you see type='logic_router', render <RouterNode />"
+// 1. REGISTER THE NODE TYPES
+// Helper for UUID detection
+const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
 const nodeTypes = {
   trigger_start: StartNode,
   trigger_end: EndNode,
@@ -125,7 +127,9 @@ const AppContent = () => {
         setNodes((templateMatch.nodes as Node[]) || []);
         setEdges((templateMatch.edges as Edge[]) || []);
         setWorkflowName((templateMatch.name as string) || "Untitled Workflow");
-        setWorkflowId(templateMatch.workflowId as string);
+        // Templates are NEW drafts, reset IDs
+        setId("");
+        setWorkflowId("");
       } else {
         fetch(`/api/workflows/${urlWorkflowId}`)
           .then(res => {
@@ -136,6 +140,7 @@ const AppContent = () => {
             setNodes((data.nodes as Node[]) || []);
             setEdges((data.edges as Edge[]) || []);
             setWorkflowName((data.name as string) || "Untitled Workflow");
+            setId(data.id as string);
             setWorkflowId(data.workflowId as string);
           })
           .catch(err => console.error(err));
@@ -295,6 +300,18 @@ const AppContent = () => {
       const startNode = nodes.find((n) => n.type === "trigger_start");
       if (!startNode) throw new Error("Workflow must have a Start Trigger");
 
+      // 🛑 Critical Check: If workflow has no ID, or is a sample/local (not a real DB UUID), save it first
+      let currentId = id;
+      let currentWorkflowId = workflowId;
+
+      if (!currentId || !isUUID(currentId) || !currentWorkflowId || currentWorkflowId.startsWith('sample_')) {
+        console.log("Workflow not in database or is template. Saving to database first...");
+        const savedWorkflow = await performSaveToDatabase();
+        if (!savedWorkflow) return; // Save failed
+        currentId = savedWorkflow.id;
+        currentWorkflowId = savedWorkflow.workflowId;
+      }
+
       // Initialize Steps Dictionary
       interface WorkflowStep {
         id: string;
@@ -359,8 +376,8 @@ const AppContent = () => {
       });
 
       const payload = {
-        id: id,
-        workflowId: workflowId,
+        id: currentId,
+        workflowId: currentWorkflowId, // Use the (possibly newly saved) ID
         startAt: startNode.id,
         steps: steps,
       };
@@ -395,29 +412,43 @@ const AppContent = () => {
     }
   };
 
-  const onSaveDatabase = async () => {
+  /**
+   * Helper that performs the actual fetch to save.
+   * Returns the parsed response if successful, null otherwise.
+   */
+  const performSaveToDatabase = async () => {
     try {
       const response = await fetch("/api/workflows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: workflowName,
-          nodes, // React Flow nodes state
-          edges, // React Flow edges state
+          nodes,
+          edges,
         }),
       });
 
-      if (response.ok) {
-        const resp = await response.json();
-        setId(resp.id);
-        setWorkflowId(resp.workflowId);
-        alert("✅ Workflow Saved to Database!");
-        setShowSaveModal(false);
-      } else {
-        alert("❌ Failed to save to database");
+      if (!response.ok) {
+        throw new Error(`Failed to save: ${response.statusText}`);
       }
-    } catch {
+
+      const resp = await response.json();
+      // Sync State
+      setId(resp.id);
+      setWorkflowId(resp.workflowId);
+      return resp;
+    } catch (e) {
+      console.error(e);
       alert("❌ Failed to save to database");
+      return null;
+    }
+  };
+
+  const onSaveDatabase = async () => {
+    const result = await performSaveToDatabase();
+    if (result) {
+      alert("✅ Workflow Saved to Database!");
+      setShowSaveModal(false);
     }
   };
 
@@ -482,7 +513,18 @@ const AppContent = () => {
     setEdges((eds) => eds.map((e) => ({ ...e, selected: false } as Edge)).concat(newEdges));
 
     setWorkflowName((workflowData.name as string) || "Untitled Workflow");
-    setWorkflowId(workflowData.workflowId as string);
+
+    // Check if it's a "real" database workflow
+    const incomingId = String(workflowData.id || "");
+
+    if (isUUID(incomingId)) {
+      setId(incomingId);
+      setWorkflowId(workflowData.workflowId as string);
+    } else {
+      // It's a template or local file - treat as NEW
+      setId("");
+      setWorkflowId("");
+    }
 
     // 2. Close modal
     setShowSavedList(false);
