@@ -16,7 +16,7 @@ export function useUndoRedo(
     const [past, setPast] = useState<HistoryState[]>([]);
     const [future, setFuture] = useState<HistoryState[]>([]);
     // Use a flag to avoid saving history sequentially while undoing/redoing
-    const [isUndoRedoAction, setIsUndoRedoAction] = useState(false);
+    const [, setIsUndoRedoAction] = useState(false);
 
     // Function to take a manual snapshot. Best called on drag start, connect end, node delete, etc.
     const takeSnapshot = useCallback(() => {

@@ -29,7 +29,7 @@ export const aiIntegrations: IntegrationSchema[] = [
           "claude-3-opus-20240229",
           "llama3-70b-8192",
           "mixtral-8x7b-32768",
-          "openai-gpt-oss-20b"
+          "openai/gpt-oss-20b"
         ],
       },
       {

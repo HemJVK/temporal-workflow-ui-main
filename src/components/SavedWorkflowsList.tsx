@@ -29,7 +29,7 @@ export const SAMPLE_WORKFLOWS = [
     updatedAt: new Date().toISOString(),
     nodes: [
       { id: "start_2", type: "trigger_start", position: { x: 100, y: 100 }, data: { label: "Start", type: "trigger_start", config: { triggerType: "Manual" } } },
-      { id: "action_3", type: "tool_generic_llm", position: { x: 400, y: 100 }, data: { label: "Prompt Expert", type: "tool_generic_llm", config: { prompt: "Explain quantum computing in exact one sentence." } } }
+      { id: "action_3", type: "tool_generic_llm", position: { x: 400, y: 100 }, data: { label: "Prompt Expert", type: "tool_generic_llm", config: { userPrompt: "Explain quantum computing in exact one sentence." } } }
     ],
     edges: [
       { id: "e3", source: "start_2", target: "action_3" }

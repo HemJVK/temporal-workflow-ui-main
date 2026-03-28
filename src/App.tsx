@@ -1,4 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import TutorialPage from './pages/TutorialPage';
+import { isAuthenticated, getAuthUser, getToken, setAuthUser } from './utils/auth';
 import {
   ReactFlow,
   Background,
@@ -37,6 +43,7 @@ import { ParallelNode } from "./components/workflowNodes/ParallelNode";
 import { DynamicNode } from "./components/workflowNodes/DynamicNode";
 import DynamicPropertyPanel from "./components/nodes/DynamicPropertyPanel";
 import { EndNode } from "./components/nodes/EndNode";
+import TutorialOverlay from "./components/TutorialOverlay";
 
 // 1. REGISTER THE NODE TYPES
 // Helper for UUID detection
@@ -95,11 +102,13 @@ const AppContent = () => {
   const [id, setId] = useState<string>("");
   const [workflowId, setWorkflowId] = useState<string>("");
   const [, setRunId] = useState<string>("");
+  const [isRunning, setIsRunning] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [showSavedList, setShowSavedList] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
+  const [showTutorialOverlay, setShowTutorialOverlay] = useState(false);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -179,6 +188,31 @@ const AppContent = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [nodes, edges, copy, paste, cut, duplicate]);
+
+  useEffect(() => {
+    const user = getAuthUser();
+    if (user && user.has_seen_tutorial === false) {
+       setShowTutorialOverlay(true);
+    }
+  }, []);
+
+  const handleTutorialClose = async () => {
+     setShowTutorialOverlay(false);
+     try {
+        await fetch('/api/auth/tutorial-seen', {
+           method: 'POST',
+           headers: { 'Authorization': `Bearer ${getToken()}` },
+        });
+        // Update local storage user state
+        const user = getAuthUser();
+        if (user) {
+          user.has_seen_tutorial = true;
+          setAuthUser(user);
+        }
+     } catch (e) {
+        console.error(e);
+     }
+  };
 
   const openTemporalHistory = () => {
     // 1. Detect Environment
@@ -412,6 +446,28 @@ const AppContent = () => {
     }
   };
 
+  const onRunWorkflow = async () => {
+    if (!workflowId) return;
+    setIsRunning(true);
+    try {
+      const response = await fetch(`/api/webhooks/${workflowId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "manual_ui_trigger" }),
+      });
+
+      if (!response.ok) throw new Error("Failed to start workflow");
+      const result = await response.json();
+      setRunId(result.runId);
+      alert("🚀 Workflow started!");
+    } catch (error) {
+      console.error(error);
+      alert("❌ Failed to start workflow");
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   /**
    * Helper that performs the actual fetch to save.
    * Returns the parsed response if successful, null otherwise.
@@ -620,26 +676,52 @@ const AppContent = () => {
             <input type="file" accept=".json" className="hidden" onChange={onImportConfig} />
           </label>
 
-          <button
-            onClick={onDeploy}
-            disabled={isDeploying}
-            className="bg-purple-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-purple-700 shadow-md transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ml-2"
-          >
-            {isDeploying ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Deploying...
-              </>
-            ) : (
-              "Deploy Workflow"
+          <div className="flex items-center gap-2 ml-2">
+            <button
+              onClick={onDeploy}
+              disabled={isDeploying}
+              className="bg-purple-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-purple-700 shadow-md transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isDeploying ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Deploying...
+                </>
+              ) : (
+                <>
+                  <Zap size={16} fill="currentColor" />
+                  Deploy Workflow
+                </>
+              )}
+            </button>
+
+            {/* RUN BUTTON - Only show if we have a workflowId (published) */}
+            {workflowId && !isDeploying && (
+              <button
+                onClick={onRunWorkflow}
+                disabled={isRunning}
+                className="bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 shadow-md transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isRunning ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Running...
+                  </>
+                ) : (
+                  <>
+                    <Activity size={16} />
+                    Run Workflow
+                  </>
+                )}
+              </button>
             )}
-          </button>
+          </div>
 
           <button
             onClick={openTemporalHistory}
             className={`
               flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
-              text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-100"
+              text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-100
             `}
             title="View Execution History in Temporal"
           >
@@ -678,6 +760,8 @@ const AppContent = () => {
             isOpen={showMarketplace}
             onClose={() => setShowMarketplace(false)}
           />
+
+          {showTutorialOverlay && <TutorialOverlay onClose={handleTutorialClose} />}
 
           <ReactFlow
             nodes={nodes}
@@ -772,10 +856,30 @@ const AppContent = () => {
   );
 };
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
+
 export default function App() {
   return (
-    <ReactFlowProvider>
-      <AppContent />
-    </ReactFlowProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/tutorial" element={<TutorialPage />} />
+        <Route path="/app" element={
+          <ProtectedRoute>
+            <ReactFlowProvider>
+              <AppContent />
+            </ReactFlowProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   );
 }
