@@ -29,6 +29,7 @@ import {
   Activity,
   Download,
   Upload,
+  User as UserIcon,
 } from "lucide-react";
 import { SavedWorkflowsList, SAMPLE_WORKFLOWS } from "./components/SavedWorkflowsList";
 import McpMarketplace from "./components/McpMarketplace";
@@ -44,6 +45,8 @@ import { DynamicNode } from "./components/workflowNodes/DynamicNode";
 import DynamicPropertyPanel from "./components/nodes/DynamicPropertyPanel";
 import { EndNode } from "./components/nodes/EndNode";
 import TutorialOverlay from "./components/TutorialOverlay";
+import PhoneEnrollmentPrompt from "./components/PhoneEnrollmentPrompt";
+import ProfileModal from "./components/ProfileModal";
 
 // 1. REGISTER THE NODE TYPES
 // Helper for UUID detection
@@ -109,6 +112,8 @@ const AppContent = () => {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
   const [showTutorialOverlay, setShowTutorialOverlay] = useState(false);
+  const [showPhonePrompt, setShowPhonePrompt] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -193,6 +198,8 @@ const AppContent = () => {
     const user = getAuthUser();
     if (user && user.has_seen_tutorial === false) {
        setShowTutorialOverlay(true);
+    } else if (user && !user.phone_number) {
+       setShowPhonePrompt(true);
     }
   }, []);
 
@@ -729,6 +736,16 @@ const AppContent = () => {
             <span className="hidden sm:inline">Monitor Runs</span>
             <ExternalLink size={12} className="opacity-20" />
           </button>
+
+          <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+
+          <button
+            onClick={() => setShowProfileModal(true)}
+            className="p-2 ml-1 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/20 dark:text-indigo-400 dark:hover:bg-indigo-500/30 transition-colors shadow-sm"
+            title="Profile & Settings"
+          >
+            <UserIcon size={18} />
+          </button>
         </div>
       </div>
 
@@ -761,7 +778,21 @@ const AppContent = () => {
             onClose={() => setShowMarketplace(false)}
           />
 
-          {showTutorialOverlay && <TutorialOverlay onClose={handleTutorialClose} />}
+          {showTutorialOverlay && <TutorialOverlay onClose={() => {
+              handleTutorialClose();
+              const user = getAuthUser();
+              if (user && !user.phone_number) setShowPhonePrompt(true);
+          }} />}
+          
+          {showPhonePrompt && <PhoneEnrollmentPrompt 
+              onClose={() => setShowPhonePrompt(false)} 
+              onSuccess={() => setShowPhonePrompt(false)} 
+          />}
+          
+          {showProfileModal && <ProfileModal 
+              onClose={() => setShowProfileModal(false)}
+              onOpenPhonePrompt={() => setShowPhonePrompt(true)}
+          />}
 
           <ReactFlow
             nodes={nodes}

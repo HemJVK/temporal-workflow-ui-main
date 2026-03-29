@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Zap, ArrowRight, Loader2, Github, Mail } from 'lucide-react';
+import { Zap, ArrowRight, Loader2, Github } from 'lucide-react';
 import { setToken, setAuthUser } from '../utils/auth';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -33,7 +34,7 @@ export default function Login() {
   };
 
   const handleSso = async (provider: string) => {
-     // Mock SSO login for now
+     // Mock SSO login for Github right now
      setLoading(true);
      try {
        const res = await fetch('/api/auth/sso', {
@@ -52,6 +53,27 @@ export default function Login() {
      } finally {
          setLoading(false);
      }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: credentialResponse.credential })
+      });
+      if (!res.ok) throw new Error('Google SSO Login failed');
+      const data = await res.json();
+      setToken(data.access_token);
+      setAuthUser(data.user);
+      navigate('/app');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -92,12 +114,14 @@ export default function Login() {
            <span className="w-full h-px bg-white/10"></span>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4">
-           <button onClick={() => handleSso('github')} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 py-2.5 rounded-xl hover:bg-white/10 transition-colors text-sm font-medium">
-             <Github size={18} /> Github
-           </button>
-           <button onClick={() => handleSso('google')} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 py-2.5 rounded-xl hover:bg-white/10 transition-colors text-sm font-medium">
-             <Mail size={18} /> Google
+        <div className="mt-6 flex flex-col items-center gap-3">
+           <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Login Failed')}
+              shape="pill"
+           />
+           <button onClick={() => handleSso('github')} className="w-[80%] flex items-center justify-center gap-2 bg-white/5 border border-white/10 py-2 rounded-full hover:bg-white/10 transition-colors text-sm font-medium">
+             <Github size={18} /> Continue with Github
            </button>
         </div>
 
