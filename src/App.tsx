@@ -792,6 +792,8 @@ const AppContent = () => {
           {showProfileModal && <ProfileModal 
               onClose={() => setShowProfileModal(false)}
               onOpenPhonePrompt={() => setShowPhonePrompt(true)}
+              darkMode={darkMode}
+              onToggleDarkMode={toggleDarkMode}
           />}
 
           <ReactFlow
