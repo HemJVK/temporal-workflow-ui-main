@@ -17,7 +17,7 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
     top: number;
     left: number;
   } | null>(null);
-  const [mcpLoaded, setMcpLoaded] = useState(false);
+  const [, setMcpLoaded] = useState(false);
   const user = getAuthUser();
 
   React.useEffect(() => {
@@ -54,7 +54,7 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
         tool.category.toLowerCase().includes(lowerTerm)
       );
     });
-  }, [searchTerm, mcpLoaded]);
+  }, [searchTerm]);
 
   const onDragStart = (event: React.DragEvent, type: string, label: string) => {
     event.dataTransfer.setData(

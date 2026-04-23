@@ -38,7 +38,7 @@ export default function AdminBootstrap() {
       } else {
         setError(data.message || 'Verification failed. Please check your passkey.');
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);

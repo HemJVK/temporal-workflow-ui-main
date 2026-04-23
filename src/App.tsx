@@ -36,7 +36,8 @@ import {
   Coins,
   Monitor,
 } from "lucide-react";
-import { SavedWorkflowsList, SAMPLE_WORKFLOWS } from "./components/SavedWorkflowsList";
+import { SavedWorkflowsList } from "./components/SavedWorkflowsList";
+import { SAMPLE_WORKFLOWS } from "./utils/sample-workflows";
 import McpMarketplace from "./components/McpMarketplace";
 import Sidebar from "./components/Sidebar";
 import { useUndoRedo } from "./hooks/useUndoRedo";
@@ -235,7 +236,7 @@ const AppContent = () => {
     if (token) {
       fetch('/api/credits/balance', { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json())
-        .then((d: any) => setCreditBalance(d.balance ?? null))
+        .then((d: { balance?: number }) => setCreditBalance(d.balance ?? null))
         .catch(() => {});
     }
   }, []);
@@ -340,7 +341,7 @@ const AppContent = () => {
       takeSnapshot();
       setNodes((nds) => nds.concat(newNode));
     },
-    [setNodes, reactFlowWrapper, nodeTypes, takeSnapshot]
+    [setNodes, reactFlowWrapper, takeSnapshot, screenToFlowPosition]
   );
 
   const onNodeClick = (_: React.MouseEvent, node: Node) => {

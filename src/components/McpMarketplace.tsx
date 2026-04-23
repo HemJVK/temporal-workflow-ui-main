@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Search, Globe, Plus, Trash2, Loader2 } from 'lucide-react';
 
 interface ServerDef {
@@ -26,7 +26,7 @@ export default function McpMarketplace({ isOpen, onClose }: { isOpen: boolean, o
         }
     };
 
-    const fetchRegistry = async (registry: string) => {
+    const fetchRegistry = useCallback(async (registry: string) => {
         setLoading(true);
         try {
             const res = await fetch(`/api/mcp/marketplace/${registry}?q=${search}`);
@@ -36,7 +36,7 @@ export default function McpMarketplace({ isOpen, onClose }: { isOpen: boolean, o
             console.error("Failed to fetch registry");
         }
         setLoading(false);
-    };
+    }, [search]);
 
     useEffect(() => {
         if (isOpen) {
@@ -48,7 +48,7 @@ export default function McpMarketplace({ isOpen, onClose }: { isOpen: boolean, o
         if (activeTab === 'smithery' || activeTab === 'glama') {
             setTimeout(() => { fetchRegistry(activeTab); }, 0);
         }
-    }, [activeTab, search]);
+    }, [activeTab, search, fetchRegistry]);
 
     const installServer = async (serverDef: ServerDef) => {
         const config = serverDef.config || {
