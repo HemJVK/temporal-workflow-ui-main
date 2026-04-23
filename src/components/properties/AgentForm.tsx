@@ -13,9 +13,13 @@ export default function AgentForm({ config, onChange }: AgentFormProps) {
         </label>
         <select
           className="w-full p-2 bg-white border border-gray-200 rounded text-sm focus:border-purple-500 outline-none"
-          value={(config.model as string) || "gpt-4o"}
+          value={(config.model as string) || "google/gemini-2.0-flash-lite-preview-02-05:free"}
           onChange={(e) => onChange("model", e.target.value)}
         >
+          <option value="google/gemini-2.0-flash-lite-preview-02-05:free">🟢 Gemini 2.0 Flash Lite (OpenRouter Free) ⭐</option>
+          <option value="meta-llama/llama-3.3-70b-instruct:free">🟢 Llama 3.3 70B (OpenRouter Free) ⭐</option>
+          <option value="meta-llama/llama-4-maverick:free">🟢 Llama 4 Maverick (OpenRouter Free)</option>
+          <option value="deepseek/deepseek-r1:free">🟢 DeepSeek R1 (OpenRouter Free)</option>
           <option value="gpt-4o">OpenAI GPT-4o</option>
           <option value="gpt-4-turbo">OpenAI GPT-4 Turbo</option>
           <option value="claude-3-5-sonnet">Anthropic Claude 3.5</option>

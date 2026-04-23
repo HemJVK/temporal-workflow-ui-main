@@ -40,10 +40,22 @@ const triggerEnd: IntegrationSchema = {
   inputs: [],
 };
 
+const triggerSchedule: IntegrationSchema = {
+  type: "trigger_schedule",
+  label: "Schedule Trigger",
+  category: "processing",
+  icon: "Clock",
+  description: "Runs on a recurring schedule",
+  inputs: [
+    { key: "cron", label: "Cron Expression", type: "text", defaultValue: "0 9 * * 1-5" }
+  ],
+};
+
 // --- MASTER REGISTRY ---
 export const INTEGRATION_REGISTRY: IntegrationSchema[] = [
   triggerDefinition,
   triggerEnd,
+  triggerSchedule,
   ...dataIntegrations,
   ...aiIntegrations,
   ...logicIntegrations,

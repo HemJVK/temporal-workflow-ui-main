@@ -19,8 +19,14 @@ export const aiIntegrations: IntegrationSchema[] = [
         key: "model",
         label: "Model",
         type: "select",
-        defaultValue: "gpt-4o",
+        defaultValue: "google/gemini-2.0-flash-lite-preview-02-05:free",
         options: [
+          "google/gemini-2.0-flash-lite-preview-02-05:free",
+          "meta-llama/llama-3.3-70b-instruct:free",
+          "nvidia/nemotron-3-super-120b-a12b:free",
+          "meta-llama/llama-4-scout:free",
+          "meta-llama/llama-4-maverick:free",
+          "deepseek/deepseek-r1:free",
           "gpt-4o",
           "gpt-4o-mini",
           "gemini-2.5-pro",
@@ -29,7 +35,6 @@ export const aiIntegrations: IntegrationSchema[] = [
           "claude-3-opus-20240229",
           "llama3-70b-8192",
           "mixtral-8x7b-32768",
-          "openai/gpt-oss-20b"
         ],
       },
       {
@@ -132,8 +137,13 @@ export const aiIntegrations: IntegrationSchema[] = [
         key: "model",
         label: "Reasoning Model",
         type: "select",
-        defaultValue: "gpt-4o",
+        defaultValue: "google/gemini-2.0-flash-lite-preview-02-05:free",
         options: [
+          "google/gemini-2.0-flash-lite-preview-02-05:free",
+          "meta-llama/llama-3.3-70b-instruct:free",
+          "nvidia/nemotron-3-super-120b-a12b:free",
+          "meta-llama/llama-4-maverick:free",
+          "deepseek/deepseek-r1:free",
           "gpt-4o",
           "gemini-2.5-pro",
           "claude-3-5-sonnet-20240620",
@@ -141,7 +151,7 @@ export const aiIntegrations: IntegrationSchema[] = [
           "llama3-70b-8192"
         ],
         helperText:
-          "Complex research requires smarter models (GPT-4o recommended).",
+          "Complex research requires smarter models (Nemotron 120B or GPT-4o recommended).",
       },
       {
         key: "topic",
@@ -172,4 +182,32 @@ export const aiIntegrations: IntegrationSchema[] = [
       },
     ],
   },
+  {
+    type: "ai_agent",
+    label: "Custom AI Agent",
+    category: "ai",
+    icon: "Bot",
+    description: "An AI Agent executing custom logic.",
+    inputs: [
+      {
+        key: "agentName",
+        label: "Agent Name",
+        type: "text",
+        placeholder: "e.g. Writer Agent"
+      },
+      {
+        key: "systemPrompt",
+        label: "System Prompt",
+        type: "textarea",
+        placeholder: "You are an expert..."
+      },
+      {
+        key: "userPrompt",
+        label: "User Prompt",
+        type: "textarea",
+        defaultValue: "{{input}}",
+        helperText: "Input variables"
+      }
+    ]
+  }
 ];

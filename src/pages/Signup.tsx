@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Zap, ArrowRight, Loader2, Smartphone, Gift } from 'lucide-react';
+import { Zap, ArrowRight, Loader2, Smartphone, Gift, Eye, EyeOff } from 'lucide-react';
 import { setToken, setAuthUser } from '../utils/auth';
 import { GoogleLogin } from '@react-oauth/google';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [verifyUserId, setVerifyUserId] = useState<string | null>(null);
   const [otpCode, setOtpCode] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const navigate = useNavigate();
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -65,6 +67,28 @@ export default function Signup() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!verifyUserId || resendCooldown > 0) return;
+    try {
+      await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: verifyUserId }),
+      });
+      setResendCooldown(60);
+      const interval = setInterval(() => {
+        setResendCooldown(prev => {
+          if (prev <= 1) { clearInterval(interval); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+      setError('OTP resent successfully!');
+      setTimeout(() => setError(''), 3000);
+    } catch {
+      setError('Failed to resend OTP');
     }
   };
 
@@ -128,7 +152,12 @@ export default function Signup() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
-              <input type="password" required value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-white transition-all placeholder:text-gray-500" placeholder="••••••••" />
+              <div className="relative">
+                <input type={showPassword ? "text" : "password"} required value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-white transition-all placeholder:text-gray-500 pr-12" placeholder="••••••••" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
             <button disabled={loading} type="submit" className="w-full mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold flex items-center justify-center gap-2 py-3 rounded-xl hover:shadow-[0_0_20px_rgba(79,70,229,0.4)] transition-all">
               {loading ? <Loader2 size={20} className="animate-spin" /> : 'Sign Up Free'}
@@ -148,9 +177,19 @@ export default function Signup() {
               {loading ? <Loader2 size={20} className="animate-spin" /> : 'Verify & Continue'}
               {!loading && <Zap size={18} className="fill-white" />}
             </button>
-            <button type="button" onClick={() => setVerifyUserId(null)} className="w-full text-sm text-gray-400 hover:text-white transition-colors py-2">
-              Back to Sign Up
-            </button>
+            <div className="flex items-center justify-between">
+              <button type="button" onClick={() => setVerifyUserId(null)} className="text-sm text-gray-400 hover:text-white transition-colors py-2">
+                Back to Sign Up
+              </button>
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={resendCooldown > 0}
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors py-2 disabled:opacity-50"
+              >
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend OTP'}
+              </button>
+            </div>
           </form>
         )}
 

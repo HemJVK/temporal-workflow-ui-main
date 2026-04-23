@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
-import { Search, ChevronsLeft, PanelLeft, Globe } from "lucide-react"; // Import Icons
+import { Search, ChevronsLeft, PanelLeft, Globe, Shield } from "lucide-react"; // Import Icons
 import { INTEGRATION_REGISTRY } from "../integrations";
 import { BrandIcon } from "./BrandIcon";
+import { getAuthUser } from "../utils/auth";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -17,6 +18,7 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
     left: number;
   } | null>(null);
   const [mcpLoaded, setMcpLoaded] = useState(false);
+  const user = getAuthUser();
 
   React.useEffect(() => {
     fetch('/api/mcp/servers')
@@ -166,7 +168,17 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
         })}
       </div>
 
-      <div className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <div className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col gap-2">
+        {user?.is_admin && (
+          <button
+            onClick={() => window.location.href = '/admin/users'}
+            className={`w-full flex items-center justify-center gap-2 p-2 rounded-lg font-medium transition-all ${isCollapsed ? 'bg-transparent hover:bg-purple-50 text-purple-600' : 'bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50'}`}
+            title="Admin Portal"
+          >
+            <Shield size={18} />
+            {!isCollapsed && <span>Admin Portal</span>}
+          </button>
+        )}
         <button
           onClick={onOpenMarketplace}
           className={`w-full flex items-center justify-center gap-2 p-2 rounded-lg font-medium transition-all ${isCollapsed ? 'bg-transparent hover:bg-blue-50 text-blue-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50'}`}

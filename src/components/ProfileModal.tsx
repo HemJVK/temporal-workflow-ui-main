@@ -12,6 +12,7 @@ import {
   Settings,
   Moon,
   Sun,
+  Monitor,
   Bell,
   BellOff,
 } from 'lucide-react';
@@ -21,8 +22,8 @@ import ApiKeysPanel from './ApiKeysPanel';
 interface Props {
   onClose: () => void;
   onOpenPhonePrompt: () => void;
-  darkMode: boolean;
-  onToggleDarkMode: () => void;
+  theme: 'light' | 'dark' | 'system';
+  onThemeChange: (theme: 'light' | 'dark' | 'system') => void;
 }
 
 type Tab = 'profile' | 'api-keys' | 'preferences';
@@ -94,7 +95,7 @@ function ProfileTab({ onClose, onOpenPhonePrompt, navigate }: {
               onClick={() => { onClose(); onOpenPhonePrompt(); }}
               className="text-xs font-bold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-500/20 px-3 py-1.5 rounded-lg hover:bg-green-200 dark:hover:bg-green-500/30 transition-colors"
             >
-              Add (+30 Credits)
+              Add (+5000 Credits)
             </button>
           )}
         </div>
@@ -126,7 +127,7 @@ function ProfileTab({ onClose, onOpenPhonePrompt, navigate }: {
 }
 
 // ── Preferences Tab ───────────────────────────────────────────────────────────────
-function PreferencesTab({ darkMode, onToggleDarkMode }: { darkMode: boolean; onToggleDarkMode: () => void }) {
+function PreferencesTab({ theme, onThemeChange }: { theme: 'light' | 'dark' | 'system'; onThemeChange: (theme: 'light' | 'dark' | 'system') => void }) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(() =>
     localStorage.getItem('notif_enabled') !== 'false'
   );
@@ -144,22 +145,37 @@ function PreferencesTab({ darkMode, onToggleDarkMode }: { darkMode: boolean; onT
       {/* Dark mode */}
       <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/50 hover:shadow-sm transition-shadow">
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg ${darkMode ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400' : 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400'}`}>
-            {darkMode ? <Moon size={16} /> : <Sun size={16} />}
+          <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400' : theme === 'light' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'bg-gray-100 dark:bg-gray-500/20 text-gray-600 dark:text-gray-400'}`}>
+            {theme === 'dark' ? <Moon size={16} /> : theme === 'light' ? <Sun size={16} /> : <Monitor size={16} />}
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Color Mode</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{darkMode ? 'Dark mode is on' : 'Light mode is on'}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Current: {theme === 'system' ? 'System' : theme === 'dark' ? 'Dark' : 'Light'}</p>
           </div>
         </div>
-        <button
-          onClick={onToggleDarkMode}
-          className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${darkMode ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'}`}
-        >
-          <span
-            className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-300 ${darkMode ? 'translate-x-5' : 'translate-x-0'}`}
-          />
-        </button>
+        <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+          <button
+            onClick={() => onThemeChange('light')}
+            className={`p-1.5 rounded-md transition-colors ${theme === 'light' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+            title="Light Mode"
+          >
+            <Sun size={14} />
+          </button>
+          <button
+            onClick={() => onThemeChange('system')}
+            className={`p-1.5 rounded-md transition-colors ${theme === 'system' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+            title="System Preference"
+          >
+            <Monitor size={14} />
+          </button>
+          <button
+            onClick={() => onThemeChange('dark')}
+            className={`p-1.5 rounded-md transition-colors ${theme === 'dark' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+            title="Dark Mode"
+          >
+            <Moon size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Notifications */}
@@ -187,7 +203,7 @@ function PreferencesTab({ darkMode, onToggleDarkMode }: { darkMode: boolean; onT
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────────
-export default function ProfileModal({ onClose, onOpenPhonePrompt, darkMode, onToggleDarkMode }: Props) {
+export default function ProfileModal({ onClose, onOpenPhonePrompt, theme, onThemeChange }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const navigate = useNavigate();
   const user = getAuthUser();
@@ -240,7 +256,7 @@ export default function ProfileModal({ onClose, onOpenPhonePrompt, darkMode, onT
           )}
           {activeTab === 'api-keys' && <ApiKeysPanel />}
           {activeTab === 'preferences' && (
-            <PreferencesTab darkMode={darkMode} onToggleDarkMode={onToggleDarkMode} />
+            <PreferencesTab theme={theme} onThemeChange={onThemeChange} />
           )}
         </div>
       </div>

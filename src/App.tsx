@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import TutorialPage from './pages/TutorialPage';
+import AdminBootstrap from './pages/AdminBootstrap';
 import { isAuthenticated, getAuthUser, getToken, setAuthUser } from './utils/auth';
 import {
   ReactFlow,
@@ -13,6 +14,7 @@ import {
   useNodesState,
   useEdgesState,
   ReactFlowProvider,
+  useReactFlow,
   type Connection,
   type Node,
   type Edge,
@@ -30,6 +32,9 @@ import {
   Download,
   Upload,
   User as UserIcon,
+  Bot,
+  Coins,
+  Monitor,
 } from "lucide-react";
 import { SavedWorkflowsList, SAMPLE_WORKFLOWS } from "./components/SavedWorkflowsList";
 import McpMarketplace from "./components/McpMarketplace";
@@ -47,6 +52,9 @@ import { EndNode } from "./components/nodes/EndNode";
 import TutorialOverlay from "./components/TutorialOverlay";
 import PhoneEnrollmentPrompt from "./components/PhoneEnrollmentPrompt";
 import ProfileModal from "./components/ProfileModal";
+import AgentsPage from "./pages/AgentsPage";
+import WorkflowHelperPanel from "./components/WorkflowHelperPanel";
+import AdminUsersPage from "./pages/AdminUsersPage";
 
 // 1. REGISTER THE NODE TYPES
 // Helper for UUID detection
@@ -100,7 +108,24 @@ const initialNodes: Node[] = [
 ];
 
 const AppContent = () => {
-  const [darkMode, setDarkMode] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
+    return (localStorage.getItem('theme') as 'light' | 'dark' | 'system') || 'system';
+  });
+  
+  const [systemIsDark, setSystemIsDark] = useState(() => 
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => setSystemIsDark(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  const isDarkMode = theme === 'system' ? systemIsDark : theme === 'dark';
+
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [isDeploying, setIsDeploying] = useState(false);
   const [id, setId] = useState<string>("");
   const [workflowId, setWorkflowId] = useState<string>("");
@@ -114,15 +139,18 @@ const AppContent = () => {
   const [showTutorialOverlay, setShowTutorialOverlay] = useState(false);
   const [showPhonePrompt, setShowPhonePrompt] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showAgentsPage, setShowAgentsPage] = useState(false);
 
   useEffect(() => {
+    localStorage.setItem('theme', theme);
     const root = window.document.documentElement;
     root.classList.remove("dark", "light");
-    if (darkMode) root.classList.add("dark");
+    if (isDarkMode) root.classList.add("dark");
     else root.classList.add("light");
-  }, [darkMode]);
+  }, [theme, isDarkMode]);
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { screenToFlowPosition } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -201,6 +229,15 @@ const AppContent = () => {
     } else if (user && !user.phone_number) {
        setShowPhonePrompt(true);
     }
+
+    // Fetch credit balance on mount
+    const token = getToken();
+    if (token) {
+      fetch('/api/credits/balance', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json())
+        .then((d: any) => setCreditBalance(d.balance ?? null))
+        .catch(() => {});
+    }
   }, []);
 
   const handleTutorialClose = async () => {
@@ -273,11 +310,11 @@ const AppContent = () => {
       if (!dataString) return;
 
       const { type, label } = JSON.parse(dataString);
-      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
-      const position = {
-        x: event.clientX - reactFlowBounds.left - 120,
-        y: event.clientY - reactFlowBounds.top - 40,
-      };
+      
+      const position = screenToFlowPosition({
+        x: event.clientX - 120,
+        y: event.clientY - 40,
+      });
 
       //DEFINE DEFAULTS BASED ON TYPE
       let defaultConfig = {};
@@ -419,6 +456,7 @@ const AppContent = () => {
       const payload = {
         id: currentId,
         workflowId: currentWorkflowId, // Use the (possibly newly saved) ID
+        userId: getAuthUser()?.id, // 👈 PASS USER ID FOR CREDITS
         startAt: startNode.id,
         steps: steps,
       };
@@ -460,7 +498,10 @@ const AppContent = () => {
       const response = await fetch(`/api/webhooks/${workflowId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source: "manual_ui_trigger" }),
+        body: JSON.stringify({ 
+          source: "manual_ui_trigger",
+          userId: getAuthUser()?.id // 👈 PASS USER ID FOR CREDITS
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to start workflow");
@@ -547,14 +588,27 @@ const AppContent = () => {
     const incomingEdges = (workflowData.edges as Edge[]) || [];
 
     const idMap = new Map<string, string>();
-    const newNodes = incomingNodes.map((node) => {
-      const newId = `${node.type}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-      idMap.set(node.id, newId);
+    const newNodes = incomingNodes.map((node, index) => {
+      const newId = `${node.type || 'node'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      idMap.set(node?.id || newId, newId);
+      
+      const safeData = node?.data || {};
+
       return {
         ...node,
         id: newId,
-        position: { x: node.position.x + 50, y: node.position.y + 50 },
+        type: node?.type || "default",
+        position: { 
+          x: node?.position?.x ?? (150 + index * 260), 
+          y: node?.position?.y ?? (100 + index * 80) 
+        },
         selected: true,
+        data: {
+          label: safeData.label || node?.type || "New Node",
+          type: safeData.type || node?.type || "default",
+          config: safeData.config || {},
+          status: safeData.status || "idle",
+        }
       };
     });
 
@@ -566,6 +620,9 @@ const AppContent = () => {
         id: `e_${source}_${target}`,
         source,
         target,
+        // AI sometimes injects phantom handles that break standard node routing
+        sourceHandle: edge.sourceHandle?.includes('default') ? null : edge.sourceHandle,
+        targetHandle: edge.targetHandle?.includes('default') ? null : edge.targetHandle,
         selected: true,
       };
     });
@@ -621,7 +678,11 @@ const AppContent = () => {
   };
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
-  const toggleDarkMode = () => setDarkMode(!darkMode);
+  const cycleTheme = () => {
+    if (theme === 'light') setTheme('dark');
+    else if (theme === 'dark') setTheme('system');
+    else setTheme('light');
+  };
 
   return (
     <div className="h-screen w-full flex flex-col font-sans transition-colors duration-300 bg-white dark:bg-black text-gray-900 dark:text-white overflow-hidden">
@@ -642,10 +703,11 @@ const AppContent = () => {
           <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1"></div>
 
           <button
-            onClick={toggleDarkMode}
-            className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-all border border-transparent dark:border-gray-700"
+            onClick={cycleTheme}
+            className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-all border border-transparent dark:border-gray-700 w-9 h-9 flex items-center justify-center"
+            title={`Toggle Theme (Current: ${theme})`}
           >
-            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+            {theme === 'light' ? <Sun size={18} /> : theme === 'dark' ? <Moon size={18} /> : <Monitor size={18} />}
           </button>
 
           {/* LOAD BUTTON */}
@@ -740,6 +802,32 @@ const AppContent = () => {
           <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1"></div>
 
           <button
+            onClick={() => setShowAgentsPage(true)}
+            className="p-2 ml-1 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 dark:bg-purple-500/20 dark:text-purple-400 dark:hover:bg-purple-500/30 transition-colors shadow-sm"
+            title="Agents"
+          >
+            <Bot size={18} />
+          </button>
+
+          {/* Credit Balance Badge */}
+          {creditBalance !== null && (
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm ${
+                creditBalance <= 5
+                  ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30 animate-pulse'
+                  : creditBalance <= 10
+                  ? 'bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/30'
+                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
+              }`}
+              title="Click to manage credits"
+            >
+              <Coins size={12} />
+              {creditBalance} credits
+            </button>
+          )}
+
+          <button
             onClick={() => setShowProfileModal(true)}
             className="p-2 ml-1 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/20 dark:text-indigo-400 dark:hover:bg-indigo-500/30 transition-colors shadow-sm"
             title="Profile & Settings"
@@ -792,9 +880,12 @@ const AppContent = () => {
           {showProfileModal && <ProfileModal 
               onClose={() => setShowProfileModal(false)}
               onOpenPhonePrompt={() => setShowPhonePrompt(true)}
-              darkMode={darkMode}
-              onToggleDarkMode={toggleDarkMode}
+              theme={theme}
+              onThemeChange={setTheme}
           />}
+
+          {/* Workflow Helper — floating panel */}
+          <WorkflowHelperPanel onLoadWorkflow={onLoadWorkflow} />
 
           <ReactFlow
             nodes={nodes}
@@ -816,7 +907,7 @@ const AppContent = () => {
             <Background
               gap={24}
               size={1.5}
-              color={darkMode ? "#444" : "#cbd5e1"}
+              color={isDarkMode ? "#444" : "#cbd5e1"}
             />
             <Controls className="dark:bg-gray-800 dark:border-gray-700 dark:fill-white shadow-xl bg-white fill-gray-900" />
           </ReactFlow>
@@ -885,6 +976,11 @@ const AppContent = () => {
           </div>
         </div>
       </div>
+
+      {/* Agents Page — full-screen overlay */}
+      {showAgentsPage && (
+        <AgentsPage onBack={() => setShowAgentsPage(false)} />
+      )}
     </div>
   );
 };
@@ -892,6 +988,14 @@ const AppContent = () => {
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
+
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const user = getAuthUser();
+  if (!isAuthenticated() || !user?.is_admin) {
+    return <Navigate to="/app" replace />;
   }
   return <>{children}</>;
 };
@@ -904,6 +1008,16 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/tutorial" element={<TutorialPage />} />
+        <Route path="/admin-bootstrap" element={
+          <ProtectedRoute>
+            <AdminBootstrap />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/users" element={
+          <AdminRoute>
+            <AdminUsersPage />
+          </AdminRoute>
+        } />
         <Route path="/app" element={
           <ProtectedRoute>
             <ReactFlowProvider>
