@@ -37,8 +37,8 @@ export default function Signup() {
       } else {
          throw new Error('Unexpected response format');
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -63,8 +63,8 @@ export default function Signup() {
       setToken(data.access_token);
       setAuthUser(data.user);
       navigate('/app');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export default function Signup() {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
     setLoading(true);
     setError('');
     try {
@@ -106,8 +106,8 @@ export default function Signup() {
       setToken(data.access_token);
       setAuthUser(data.user);
       navigate('/app');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }

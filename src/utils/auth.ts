@@ -2,7 +2,7 @@ export const setToken = (token: string) => localStorage.setItem('auth_token', to
 export const getToken = () => localStorage.getItem('auth_token');
 export const removeToken = () => localStorage.removeItem('auth_token');
 
-export const setAuthUser = (user: any) => localStorage.setItem('auth_user', JSON.stringify(user));
+export const setAuthUser = (user: unknown) => localStorage.setItem('auth_user', JSON.stringify(user));
 export const getAuthUser = () => {
     const user = localStorage.getItem('auth_user');
     return user ? JSON.parse(user) : null;

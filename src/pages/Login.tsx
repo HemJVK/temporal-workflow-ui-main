@@ -27,8 +27,8 @@ export default function Login() {
       setToken(data.access_token);
       setAuthUser(data.user);
       navigate('/app');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -49,14 +49,14 @@ export default function Login() {
          setAuthUser(data.user);
          navigate('/app');
        }
-     } catch(e) {
+     } catch {
          setError('SSO failed.');
      } finally {
          setLoading(false);
      }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
     setLoading(true);
     setError('');
     try {
@@ -70,8 +70,8 @@ export default function Login() {
       setToken(data.access_token);
       setAuthUser(data.user);
       navigate('/app');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
