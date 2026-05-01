@@ -48,6 +48,7 @@ export default function McpMarketplace({ isOpen, onClose }: { isOpen: boolean, o
         if (activeTab === 'smithery' || activeTab === 'glama') {
             setTimeout(() => { fetchRegistry(activeTab); }, 0);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab, search]);
 
     const installServer = async (serverDef: ServerDef) => {

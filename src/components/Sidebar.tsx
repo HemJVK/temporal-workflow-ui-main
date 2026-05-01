@@ -3,6 +3,7 @@ import { Search, ChevronsLeft, PanelLeft, Globe, Shield } from "lucide-react"; /
 import { INTEGRATION_REGISTRY } from "../integrations";
 import { BrandIcon } from "./BrandIcon";
 import { getAuthUser } from "../utils/auth";
+import BlockLibraryModal from "./BlockLibraryModal";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -18,9 +19,10 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
     left: number;
   } | null>(null);
   const [mcpLoaded, setMcpLoaded] = useState(false);
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const user = getAuthUser();
 
-  React.useEffect(() => {
+  const fetchDynamicBlocks = () => {
     fetch('/api/mcp/servers')
       .then(res => res.json())
       .then(data => {
@@ -42,6 +44,111 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
         }
       })
       .catch(console.error);
+
+    fetch('/api/agents', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          data.forEach(agent => {
+            const type = `ai_agent_${agent.id}`;
+            if (!INTEGRATION_REGISTRY.find(i => i.type === type)) {
+              INTEGRATION_REGISTRY.push({
+                type,
+                label: agent.name || "Agent",
+                category: "AI Agents",
+                icon: "Bot",
+                description: agent.description || "Custom AI Agent",
+                inputs: [
+                  { key: "userPrompt", label: "User Prompt", type: "textarea", defaultValue: "{{input}}" }
+                ]
+              });
+            }
+          });
+          setMcpLoaded(prev => !prev);
+        }
+      })
+      .catch(console.error);
+
+    // Fetch Custom Blocks
+    fetch('/api/custom-blocks', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          data.forEach(block => {
+            const type = `custom_block_${block.id}`;
+            if (!INTEGRATION_REGISTRY.find(i => i.type === type)) {
+              INTEGRATION_REGISTRY.push({
+                type,
+                label: block.name || "Custom Block",
+                category: "Custom Blocks",
+                icon: "Box",
+                description: block.description || "A custom reusable block",
+                inputs: (block.inputs || []).map((k: string) => ({ key: k, label: k, type: 'text' }))
+              });
+            }
+          });
+          setMcpLoaded(prev => !prev);
+        }
+      })
+      .catch(console.error);
+
+    // Fetch Custom Blocks
+    fetch('/api/custom-blocks', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          data.forEach(block => {
+            const type = `custom_block_${block.id}`;
+            if (!INTEGRATION_REGISTRY.find(i => i.type === type)) {
+              INTEGRATION_REGISTRY.push({
+                type,
+                label: block.name || "Custom Block",
+                category: "Custom Blocks",
+                icon: "Box",
+                description: block.description || "A custom reusable block",
+                inputs: (block.inputs || []).map((k: string) => ({ key: k, label: k, type: 'text' }))
+              });
+            }
+          });
+          setMcpLoaded(prev => !prev);
+        }
+      })
+      .catch(console.error);
+
+    // Fetch Workflow Packages
+    fetch('/api/workflows/packages', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          data.forEach(pkg => {
+            const type = `package_${pkg.workflowId}`;
+            if (!INTEGRATION_REGISTRY.find(i => i.type === type)) {
+              INTEGRATION_REGISTRY.push({
+                type,
+                label: pkg.name || "Workflow Package",
+                category: "Packages",
+                icon: "Box", // Or something else
+                description: pkg.description || "An abstracted workflow",
+                inputs: Array.isArray(pkg.packageInputs) ? pkg.packageInputs : []
+              });
+            }
+          });
+          setMcpLoaded(prev => !prev);
+        }
+      })
+      .catch(console.error);
+  };
+
+  React.useEffect(() => {
+    fetchDynamicBlocks();
   }, []);
 
   const filteredTools = useMemo(() => {
@@ -54,6 +161,7 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
         tool.category.toLowerCase().includes(lowerTerm)
       );
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, mcpLoaded]);
 
   const onDragStart = (event: React.DragEvent, type: string, label: string) => {
@@ -120,6 +228,17 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+        )}
+
+        {/* OPEN LIBRARY BUTTON */}
+        {!isCollapsed && (
+          <button 
+            onClick={() => setIsLibraryOpen(true)}
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg text-sm font-medium transition-colors border border-purple-200 mt-2"
+          >
+            <BrandIcon type="Box" iconName="Box" className="w-4 h-4" /> 
+            Open Block Library
+          </button>
         )}
       </div>
 
@@ -202,6 +321,14 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
           {hoveredItem.label}
           <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900" />
         </div>
+      )}
+
+      {/* Block Library Modal */}
+      {isLibraryOpen && (
+        <BlockLibraryModal 
+          onClose={() => setIsLibraryOpen(false)} 
+          onRefreshSidebar={fetchDynamicBlocks} 
+        />
       )}
     </div>
   );

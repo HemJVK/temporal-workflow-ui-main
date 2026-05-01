@@ -176,7 +176,7 @@ export const aiIntegrations: IntegrationSchema[] = [
         label: "Search Provider",
         type: "select",
         defaultValue: "Tavily",
-        options: ["Tavily", "Google Serper", "Bing"],
+        options: ["Tavily", "Google Serper"],
         helperText:
           "Ensure the API key for the selected provider is set in your .env",
       },

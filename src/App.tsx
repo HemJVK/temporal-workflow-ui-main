@@ -173,7 +173,9 @@ const AppContent = () => {
         setId("");
         setWorkflowId("");
       } else {
-        fetch(`/api/workflows/${urlWorkflowId}`)
+        fetch(`/api/workflows/${urlWorkflowId}`, {
+          headers: { "Authorization": `Bearer ${getToken()}` }
+        })
           .then(res => {
             if (!res.ok) throw new Error("Workflow not found");
             return res.json();
@@ -340,7 +342,7 @@ const AppContent = () => {
       takeSnapshot();
       setNodes((nds) => nds.concat(newNode));
     },
-    [setNodes, reactFlowWrapper, nodeTypes, takeSnapshot]
+    [setNodes, reactFlowWrapper, takeSnapshot, screenToFlowPosition]
   );
 
   const onNodeClick = (_: React.MouseEvent, node: Node) => {
@@ -465,7 +467,10 @@ const AppContent = () => {
 
       const response = await fetch("/api/workflows/deploy", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getToken()}`
+        },
         body: JSON.stringify(payload),
       });
 
@@ -524,7 +529,10 @@ const AppContent = () => {
     try {
       const response = await fetch("/api/workflows", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getToken()}`
+        },
         body: JSON.stringify({
           name: workflowName,
           nodes,
@@ -560,7 +568,10 @@ const AppContent = () => {
     try {
       const response = await fetch("/api/workflows/export-local", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getToken()}`
+        },
         body: JSON.stringify({
           name: workflowName,
           nodes,

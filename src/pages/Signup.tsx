@@ -37,8 +37,8 @@ export default function Signup() {
       } else {
          throw new Error('Unexpected response format');
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (_err: any) {
+      setError(_err.message);
     } finally {
       setLoading(false);
     }
@@ -63,8 +63,8 @@ export default function Signup() {
       setToken(data.access_token);
       setAuthUser(data.user);
       navigate('/app');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (_err: any) {
+      setError(_err.message);
     } finally {
       setLoading(false);
     }
@@ -106,8 +106,8 @@ export default function Signup() {
       setToken(data.access_token);
       setAuthUser(data.user);
       navigate('/app');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (_err: any) {
+      setError(_err.message);
     } finally {
       setLoading(false);
     }

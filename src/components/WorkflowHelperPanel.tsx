@@ -15,7 +15,7 @@ type Mode = 'generate' | 'chat';
 
 const EXAMPLE_PROMPTS = [
   'Fetch data from API and email results',
-  'Loop over users and send SMS',
+  'Loop over users and generate reports',
   'Run LLM on webhook data and store in DB',
   'Daily cron to check DB and Slack alert',
 ];

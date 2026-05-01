@@ -112,4 +112,31 @@ export const logicIntegrations: IntegrationSchema[] = [
       },
     ],
   },
+  {
+    type: "logic_custom_block",
+    label: "Custom Block",
+    category: "Logic",
+    icon: "Box",
+    description: "Create your own custom block by providing a name and logic.",
+    inputs: [
+      {
+        key: "blockName",
+        label: "Block Name",
+        type: "text",
+        placeholder: "My Custom Block",
+      },
+      {
+        key: "customLogic",
+        label: "Custom JS Code",
+        type: "textarea",
+        placeholder: "return { status: 'success', data: input };",
+      },
+      {
+        key: "dynamicInputs",
+        label: "Inputs (JSON Array)",
+        type: "textarea",
+        placeholder: "[\"field1\", \"field2\"]",
+      }
+    ],
+  },
 ];

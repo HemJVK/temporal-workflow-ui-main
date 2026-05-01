@@ -1,6 +1,5 @@
 import { Settings } from "lucide-react";
 import AgentForm from "./properties/AgentForm";
-import GmailForm from "./properties/GmailForm";
 import GoogleSearchForm from "./properties/GoogleSearchForm";
 
 import { type Node } from "@xyflow/react";
@@ -48,13 +47,6 @@ export default function PropertyPanel({ selectedNode, onChange }: { selectedNode
 
       {/* Form Container */}
       <div className="flex-1 overflow-y-auto p-6">
-        {selectedNode.data.type === "tool_email" && (
-          <GmailForm
-            config={(selectedNode.data.config as Record<string, unknown>) || {}}
-            onChange={onChange}
-          />
-        )}
-
         {selectedNode.data.type === "tool_search" && (
           <GoogleSearchForm
             config={(selectedNode.data.config as Record<string, unknown>) || {}}
@@ -70,7 +62,7 @@ export default function PropertyPanel({ selectedNode, onChange }: { selectedNode
         )}
 
         {/* Fallback for other nodes */}
-        {!["tool_email", "tool_search", "agent"].includes(
+        {!["tool_search", "agent"].includes(
           selectedNode.data.type as string
         ) && (
             <div className="text-center text-gray-400 mt-10">
