@@ -1,4 +1,4 @@
-import { Settings, X } from "lucide-react";
+import { Settings, X, Zap } from "lucide-react";
 import { getSchema } from "../../integrations";
 import { FieldFactory } from "./FieldFactory";
 import { HttpConfig } from "./HttpConfig";
@@ -8,8 +8,14 @@ import { RouterConfig } from "./RouterConfig";
 export default function DynamicPropertyPanel({
   selectedNode,
   onChange,
+  onSyncAllModels,
   onClose,
-}: { selectedNode: Record<string, unknown> | null, onChange: (key: string, value: unknown) => void, onClose: () => void }) {
+}: {
+  selectedNode: Record<string, unknown> | null;
+  onChange: (key: string, value: unknown) => void;
+  onSyncAllModels?: (model: string) => void;
+  onClose: () => void;
+}) {
   // 1. Empty State
   if (!selectedNode) {
     return (
@@ -84,29 +90,31 @@ export default function DynamicPropertyPanel({
     return (
       <div className="space-y-6">
         {schema.inputs.map((field) => {
-          // Fallback for legacy types if not caught above
-          if (field.type === "make_http_call")
-            return (
-              <HttpConfig key={field.key} config={config} onChange={onChange} />
-            );
-          if (field.type === "logic_loop")
-            return (
-              <LoopConfig key={field.key} config={config} onChange={onChange} />
-            );
-
           // Standard Fields
           return (
-            <FieldFactory
-              key={field.key}
-              field={field}
-              value={config[field.key] ?? field.defaultValue}
-              onChange={(val) => handleFieldChange(field.key, val)}
-            />
+            <div key={field.key} className="relative group">
+              <FieldFactory
+                field={field}
+                value={config[field.key] ?? field.defaultValue}
+                onChange={(val) => handleFieldChange(field.key, val)}
+              />
+              {field.key === "model" && onSyncAllModels && (
+                <button
+                  onClick={() => onSyncAllModels(String(config[field.key] ?? field.defaultValue))}
+                  className="mt-2 text-[10px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded"
+                  title="Apply this model to all AI blocks"
+                >
+                  <Zap size={10} fill="currentColor" />
+                  Apply to all AI blocks
+                </button>
+              )}
+            </div>
           );
         })}
       </div>
     );
   };
+
 
   return (
     <div className="w-96 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 flex flex-col h-full shadow-xl z-20 font-sans transition-colors duration-300">

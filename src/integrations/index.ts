@@ -65,3 +65,4 @@ export const INTEGRATION_REGISTRY: IntegrationSchema[] = [
 export const getSchema = (type: string) =>
   INTEGRATION_REGISTRY.find((i) => i.type === type);
 export { ICON_MAP };
+export type { IntegrationSchema };

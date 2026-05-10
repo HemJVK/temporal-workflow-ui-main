@@ -43,6 +43,7 @@ export const DynamicNode = ({ data, selected }: NodeProps<Node>) => {
 
   // 3. Determine Visual Mode
   const isCondition = schema.visualType === "condition";
+  const isRouter = d.type === "logic_router" || d.type === "logic_parallel" || (d.config as any)?.rules;
 
   return (
     <div
@@ -90,6 +91,10 @@ export const DynamicNode = ({ data, selected }: NodeProps<Node>) => {
             </span>
             <span className="text-gray-800">{((d.config as Record<string, unknown>)?.value as string) || "?"}</span>
           </div>
+        ) : isRouter ? (
+          <div className="text-[10px] text-gray-400 italic text-center">
+            Multi-path Router Active
+          </div>
         ) : (
           // MODE B: Standard Generic Preview (First Input)
           schema.inputs[0] && (
@@ -129,6 +134,23 @@ export const DynamicNode = ({ data, selected }: NodeProps<Node>) => {
               className="!bg-green-500 !-bottom-3 !right-2 !w-3 !h-3 border-2 border-white"
             />
           </div>
+        </div>
+      ) : isRouter ? (
+        // MODE C: Dynamic Router Handles
+        <div className="flex justify-around items-center px-2 py-3 bg-white rounded-b-lg border-t border-gray-50 overflow-hidden min-h-[45px]">
+          {((d.config as any)?.routes || (d.config as any)?.branches || (d.config as any)?.rules || []).map((item: any, idx: number) => (
+            <div key={item.id || idx} className="relative flex flex-col items-center">
+              <span className="text-[8px] font-extrabold text-purple-600 truncate max-w-[60px] mb-1">
+                {(item.label || item.target || `P${idx + 1}`).toUpperCase()}
+              </span>
+              <Handle
+                type="source"
+                position={Position.Bottom}
+                id={item.id || `path:${idx + 1}`}
+                className="!bg-purple-600 !-bottom-3 !w-3 !h-3 border-2 border-white"
+              />
+            </div>
+          ))}
         </div>
       ) : (
         // MODE B: Single Bottom Handle

@@ -11,6 +11,8 @@ export const MultiSelectField = ({ field, value, onChange }: FieldProps) => {
       { value: "send_sms_twilio", label: "Twilio SMS" },
       { value: "send_email_sendgrid", label: "SendGrid Email" },
       { value: "make_http_call", label: "HTTP Request" },
+      { value: "send_email_gmail", label: "Gmail (Direct)" },
+      { value: "google_search_serper", label: "Google Search (Serper)" },
     ];
 
   const toggle = (val: string) => {

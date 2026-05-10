@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import TutorialPage from './pages/TutorialPage';
 import AdminBootstrap from './pages/AdminBootstrap';
+import TotpSetup from './pages/TotpSetup';
 import { isAuthenticated, getAuthUser, getToken, setAuthUser } from './utils/auth';
 import {
   ReactFlow,
@@ -55,6 +56,7 @@ import ProfileModal from "./components/ProfileModal";
 import AgentsPage from "./pages/AgentsPage";
 import WorkflowHelperPanel from "./components/WorkflowHelperPanel";
 import AdminUsersPage from "./pages/AdminUsersPage";
+import { SystemStatus } from "./components/SystemStatus";
 
 // 1. REGISTER THE NODE TYPES
 // Helper for UUID detection
@@ -111,8 +113,8 @@ const AppContent = () => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
     return (localStorage.getItem('theme') as 'light' | 'dark' | 'system') || 'system';
   });
-  
-  const [systemIsDark, setSystemIsDark] = useState(() => 
+
+  const [systemIsDark, setSystemIsDark] = useState(() =>
     window.matchMedia('(prefers-color-scheme: dark)').matches
   );
 
@@ -227,9 +229,9 @@ const AppContent = () => {
   useEffect(() => {
     const user = getAuthUser();
     if (user && user.has_seen_tutorial === false) {
-       setShowTutorialOverlay(true);
+      setShowTutorialOverlay(true);
     } else if (user && !user.phone_number) {
-       setShowPhonePrompt(true);
+      setShowPhonePrompt(true);
     }
 
     // Fetch credit balance on mount
@@ -238,26 +240,26 @@ const AppContent = () => {
       fetch('/api/credits/balance', { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json())
         .then((d: any) => setCreditBalance(d.balance ?? null))
-        .catch(() => {});
+        .catch(() => { });
     }
   }, []);
 
   const handleTutorialClose = async () => {
-     setShowTutorialOverlay(false);
-     try {
-        await fetch('/api/auth/tutorial-seen', {
-           method: 'POST',
-           headers: { 'Authorization': `Bearer ${getToken()}` },
-        });
-        // Update local storage user state
-        const user = getAuthUser();
-        if (user) {
-          user.has_seen_tutorial = true;
-          setAuthUser(user);
-        }
-     } catch (e) {
-        console.error(e);
-     }
+    setShowTutorialOverlay(false);
+    try {
+      await fetch('/api/auth/tutorial-seen', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+      });
+      // Update local storage user state
+      const user = getAuthUser();
+      if (user) {
+        user.has_seen_tutorial = true;
+        setAuthUser(user);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const openTemporalHistory = () => {
@@ -312,7 +314,7 @@ const AppContent = () => {
       if (!dataString) return;
 
       const { type, label } = JSON.parse(dataString);
-      
+
       const position = screenToFlowPosition({
         x: event.clientX - 120,
         y: event.clientY - 40,
@@ -365,6 +367,28 @@ const AppContent = () => {
         return node;
       })
     );
+  };
+
+  const syncAllModels = (modelName: string) => {
+    takeSnapshot();
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.type === "ai_agent" || node.type === "tool_generic_llm" || node.type === "agent_researcher") {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              config: {
+                ...(typeof node.data.config === "object" && node.data.config !== null ? node.data.config : {}),
+                model: modelName
+              },
+            },
+          };
+        }
+        return node;
+      })
+    );
+    alert(`Successfully applied ${modelName} to all AI blocks!`);
   };
 
   // --- 4. UPDATED DEPLOY LOGIC ---
@@ -467,7 +491,7 @@ const AppContent = () => {
 
       const response = await fetch("/api/workflows/deploy", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${getToken()}`
         },
@@ -475,8 +499,13 @@ const AppContent = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Server Error: ${response.statusText}`);
+        const errBody = await response.json().catch(() => ({}));
+        const detail =
+          (Array.isArray(errBody?.message) ? errBody.message.join(', ') : errBody?.message) ||
+          response.statusText;
+        throw new Error(`Server Error: ${detail}`);
       }
+
 
       const result = await response.json();
       console.log(`deploy_result: ${JSON.stringify(result)}`);
@@ -503,9 +532,11 @@ const AppContent = () => {
       const response = await fetch(`/api/webhooks/${workflowId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           source: "manual_ui_trigger",
-          userId: getAuthUser()?.id // 👈 PASS USER ID FOR CREDITS
+          userId: getAuthUser()?.id, // 👈 PASS USER ID FOR CREDITS
+          userEmail: getAuthUser()?.email // 👈 PASS EMAIL FOR COMPOSIO ROUTING
+
         }),
       });
 
@@ -529,7 +560,7 @@ const AppContent = () => {
     try {
       const response = await fetch("/api/workflows", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${getToken()}`
         },
@@ -568,7 +599,7 @@ const AppContent = () => {
     try {
       const response = await fetch("/api/workflows/export-local", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${getToken()}`
         },
@@ -602,16 +633,16 @@ const AppContent = () => {
     const newNodes = incomingNodes.map((node, index) => {
       const newId = `${node.type || 'node'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
       idMap.set(node?.id || newId, newId);
-      
+
       const safeData = node?.data || {};
 
       return {
         ...node,
         id: newId,
         type: node?.type || "default",
-        position: { 
-          x: node?.position?.x ?? (150 + index * 260), 
-          y: node?.position?.y ?? (100 + index * 80) 
+        position: {
+          x: node?.position?.x ?? (150 + index * 260),
+          y: node?.position?.y ?? (100 + index * 80)
         },
         selected: true,
         data: {
@@ -707,6 +738,9 @@ const AppContent = () => {
             <span className="font-bold text-xl tracking-tight text-gray-800 dark:text-white hidden sm:inline">
               Agent Workflow
             </span>
+          </div>
+          <div className="hidden lg:block">
+            <SystemStatus />
           </div>
         </div>
 
@@ -824,13 +858,12 @@ const AppContent = () => {
           {creditBalance !== null && (
             <button
               onClick={() => setShowProfileModal(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm ${
-                creditBalance <= 5
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm ${creditBalance <= 5
                   ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30 animate-pulse'
                   : creditBalance <= 10
-                  ? 'bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/30'
-                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
-              }`}
+                    ? 'bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/30'
+                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
+                }`}
               title="Click to manage credits"
             >
               <Coins size={12} />
@@ -878,21 +911,21 @@ const AppContent = () => {
           />
 
           {showTutorialOverlay && <TutorialOverlay onClose={() => {
-              handleTutorialClose();
-              const user = getAuthUser();
-              if (user && !user.phone_number) setShowPhonePrompt(true);
+            handleTutorialClose();
+            const user = getAuthUser();
+            if (user && !user.phone_number) setShowPhonePrompt(true);
           }} />}
-          
-          {showPhonePrompt && <PhoneEnrollmentPrompt 
-              onClose={() => setShowPhonePrompt(false)} 
-              onSuccess={() => setShowPhonePrompt(false)} 
+
+          {showPhonePrompt && <PhoneEnrollmentPrompt
+            onClose={() => setShowPhonePrompt(false)}
+            onSuccess={() => setShowPhonePrompt(false)}
           />}
-          
-          {showProfileModal && <ProfileModal 
-              onClose={() => setShowProfileModal(false)}
-              onOpenPhonePrompt={() => setShowPhonePrompt(true)}
-              theme={theme}
-              onThemeChange={setTheme}
+
+          {showProfileModal && <ProfileModal
+            onClose={() => setShowProfileModal(false)}
+            onOpenPhonePrompt={() => setShowPhonePrompt(true)}
+            theme={theme}
+            onThemeChange={setTheme}
           />}
 
           {/* Workflow Helper — floating panel */}
@@ -982,6 +1015,7 @@ const AppContent = () => {
             <DynamicPropertyPanel
               selectedNode={selectedNode || null}
               onChange={onConfigChange}
+              onSyncAllModels={syncAllModels}
               onClose={() => setIsPanelOpen(false)}
             />
           </div>
@@ -1018,6 +1052,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/totp-setup" element={<TotpSetup />} />
         <Route path="/tutorial" element={<TutorialPage />} />
         <Route path="/admin-bootstrap" element={
           <ProtectedRoute>

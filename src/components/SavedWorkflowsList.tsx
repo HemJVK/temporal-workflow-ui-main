@@ -49,8 +49,8 @@ export const SavedWorkflowsList = ({
       fetch("/api/workflows/local").then((res) => res.json())
     ])
       .then(([dbData, localData]) => {
-        setWorkflows(dbData);
-        setLocalWorkflows(localData);
+        setWorkflows(Array.isArray(dbData) ? dbData : []);
+        setLocalWorkflows(Array.isArray(localData) ? localData : []);
       })
       .catch((err) => console.error("Failed to load workflows", err));
   }, []);

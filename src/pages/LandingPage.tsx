@@ -18,7 +18,7 @@ export default function LandingPage() {
             <Link to="/tutorial" className="text-sm text-gray-400 hover:text-white transition-colors">Tutorial</Link>
             <Link to="/login" className="text-sm font-medium hover:text-purple-400 transition-colors">Sign In</Link>
             <Link to="/signup" className="text-sm font-medium bg-white text-black px-5 py-2.5 rounded-full hover:bg-gray-100 transition-transform hover:scale-105">
-              Get Started
+              Sign Up
             </Link>
           </div>
         </div>
@@ -42,7 +42,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
             <Link to="/signup" className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-[0_0_40px_rgba(147,51,234,0.4)] transition-all hover:scale-105">
-              Start Building Free
+              Sign Up Free
               <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link to="/tutorial" className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white/10 transition-colors">
@@ -58,23 +58,66 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Mockup / Dashboard Preview Section */}
-      <div className="max-w-6xl mx-auto px-6 pb-32">
-        <div className="relative rounded-2xl border border-white/10 bg-black/40 overflow-hidden shadow-2xl shadow-purple-500/10 group backdrop-blur-xl">
-           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
-           <div className="h-10 border-b border-white/5 flex items-center px-4 gap-2 bg-white/5">
-             <div className="w-3 h-3 rounded-full bg-red-500/80" />
-             <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-             <div className="w-3 h-3 rounded-full bg-green-500/80" />
-           </div>
-           {/* Abstract visual representing node graph */}
-           <div className="h-[400px] md:h-[600px] w-full bg-[url('https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40 mix-blend-luminosity transition-transform duration-1000 group-hover:scale-105"></div>
-           
-           <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-             <div className="w-24 h-24 bg-purple-600/30 backdrop-blur-md border border-purple-500/50 rounded-2xl flex items-center justify-center shadow-[0_0_50px_rgba(147,51,234,0.5)]">
-               <Workflow size={40} className="text-purple-300" />
-             </div>
-           </div>
+      {/* Stats Bar */}
+      <div className="max-w-5xl mx-auto px-6 pb-20">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5 rounded-2xl overflow-hidden border border-white/5">
+          {[
+            { value: '200+', label: 'Tool Integrations' },
+            { value: '10×', label: 'Faster Automation' },
+            { value: '99.9%', label: 'Uptime SLA' },
+            { value: 'Free', label: 'To Start' },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-black/60 px-8 py-8 text-center hover:bg-white/[0.03] transition-colors">
+              <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 mb-1">{stat.value}</p>
+              <p className="text-sm text-gray-500">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Node Graph Illustration */}
+      <div className="max-w-5xl mx-auto px-6 pb-32">
+        <div className="relative rounded-3xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-transparent overflow-hidden p-10">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(147,51,234,0.06)_0%,transparent_70%)]" />
+          <svg viewBox="0 0 900 320" className="w-full h-auto opacity-90" aria-label="Workflow automation diagram">
+            <line x1="160" y1="160" x2="290" y2="160" stroke="#9333ea" strokeWidth="1.5" strokeDasharray="6 3" opacity="0.5" />
+            <line x1="410" y1="160" x2="490" y2="160" stroke="#9333ea" strokeWidth="1.5" strokeDasharray="6 3" opacity="0.5" />
+            <line x1="490" y1="160" x2="570" y2="100" stroke="#9333ea" strokeWidth="1.5" strokeDasharray="6 3" opacity="0.5" />
+            <line x1="490" y1="160" x2="570" y2="220" stroke="#9333ea" strokeWidth="1.5" strokeDasharray="6 3" opacity="0.5" />
+            <line x1="690" y1="100" x2="770" y2="160" stroke="#9333ea" strokeWidth="1.5" strokeDasharray="6 3" opacity="0.5" />
+            <line x1="690" y1="220" x2="770" y2="160" stroke="#9333ea" strokeWidth="1.5" strokeDasharray="6 3" opacity="0.5" />
+            <rect x="60" y="130" width="100" height="60" rx="14" fill="rgba(168,85,247,0.15)" stroke="rgba(168,85,247,0.5)" strokeWidth="1.5" />
+            <text x="110" y="154" textAnchor="middle" fill="#d8b4fe" fontSize="9" fontWeight="600">WEBHOOK</text>
+            <text x="110" y="170" textAnchor="middle" fill="#e9d5ff" fontSize="11" fontWeight="700">Trigger</text>
+            <rect x="290" y="130" width="120" height="60" rx="14" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.4)" strokeWidth="1.5" />
+            <text x="350" y="154" textAnchor="middle" fill="#93c5fd" fontSize="9" fontWeight="600">HTTP · GET</text>
+            <text x="350" y="170" textAnchor="middle" fill="#bfdbfe" fontSize="11" fontWeight="700">Fetch Data</text>
+            <rect x="490" y="130" width="80" height="60" rx="14" fill="rgba(234,179,8,0.12)" stroke="rgba(234,179,8,0.4)" strokeWidth="1.5" />
+            <text x="530" y="154" textAnchor="middle" fill="#fde68a" fontSize="9" fontWeight="600">LOGIC</text>
+            <text x="530" y="170" textAnchor="middle" fill="#fef3c7" fontSize="11" fontWeight="700">Router</text>
+            <rect x="570" y="70" width="120" height="60" rx="14" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.4)" strokeWidth="1.5" />
+            <text x="630" y="94" textAnchor="middle" fill="#6ee7b7" fontSize="9" fontWeight="600">AI AGENT</text>
+            <text x="630" y="110" textAnchor="middle" fill="#a7f3d0" fontSize="11" fontWeight="700">Draft Email</text>
+            <rect x="570" y="190" width="120" height="60" rx="14" fill="rgba(244,63,94,0.12)" stroke="rgba(244,63,94,0.4)" strokeWidth="1.5" />
+            <text x="630" y="214" textAnchor="middle" fill="#fda4af" fontSize="9" fontWeight="600">LLM</text>
+            <text x="630" y="230" textAnchor="middle" fill="#fecdd3" fontSize="11" fontWeight="700">Summarise</text>
+            <rect x="770" y="130" width="100" height="60" rx="14" fill="rgba(147,51,234,0.15)" stroke="rgba(147,51,234,0.5)" strokeWidth="1.5" />
+            <text x="820" y="154" textAnchor="middle" fill="#d8b4fe" fontSize="9" fontWeight="600">END</text>
+            <text x="820" y="170" textAnchor="middle" fill="#e9d5ff" fontSize="11" fontWeight="700">Complete</text>
+            <circle r="3" fill="#a855f7" opacity="0.9">
+              <animateMotion dur="2s" repeatCount="indefinite" path="M160,160 L290,160" />
+            </circle>
+            <circle r="3" fill="#a855f7" opacity="0.9">
+              <animateMotion dur="2.5s" repeatCount="indefinite" path="M410,160 L490,160" />
+            </circle>
+            <circle r="3" fill="#22c55e" opacity="0.9">
+              <animateMotion dur="3s" repeatCount="indefinite" path="M490,160 L570,100" />
+            </circle>
+            <circle r="3" fill="#f43f5e" opacity="0.9">
+              <animateMotion dur="3s" repeatCount="indefinite" path="M490,160 L570,220" />
+            </circle>
+          </svg>
+          <p className="text-center text-xs text-gray-600 mt-2 tracking-widest uppercase">Visual Workflow Canvas — Drag, Drop, Connect</p>
         </div>
       </div>
 

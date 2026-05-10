@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from "react";
-import { Search, ChevronsLeft, PanelLeft, Globe, Shield } from "lucide-react"; // Import Icons
-import { INTEGRATION_REGISTRY } from "../integrations";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { Search, ChevronsLeft, PanelLeft, Globe, Shield } from "lucide-react";
+import { INTEGRATION_REGISTRY, type IntegrationSchema } from "../integrations";
 import { BrandIcon } from "./BrandIcon";
 import { getAuthUser } from "../utils/auth";
 import BlockLibraryModal from "./BlockLibraryModal";
@@ -18,142 +18,139 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
     top: number;
     left: number;
   } | null>(null);
-  const [mcpLoaded, setMcpLoaded] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+
+  // Dynamic blocks fetched from the API — stored in React state so re-renders work correctly
+  const [dynamicBlocks, setDynamicBlocks] = useState<IntegrationSchema[]>([]);
+
   const user = getAuthUser();
+  const token = localStorage.getItem("token");
 
-  const fetchDynamicBlocks = () => {
-    fetch('/api/mcp/servers')
-      .then(res => res.json())
-      .then(data => {
+  /**
+   * Fetches MCP servers, Agents, Custom Blocks and Workflow Packages from the API
+   * and stores them in local React state. This avoids mutating the shared
+   * INTEGRATION_REGISTRY and fixes the stale-closure / duplicate-fetch bugs.
+   */
+  const fetchDynamicBlocks = useCallback(async () => {
+    const blocks: IntegrationSchema[] = [];
+
+    // 1. MCP Servers — no auth needed (public endpoint)
+    try {
+      const res = await fetch("/api/mcp/servers");
+      if (res.ok) {
+        const data: any[] = await res.json();
         if (Array.isArray(data)) {
-          data.forEach(server => {
-            const type = `tool_mcp_${server.id}`;
-            if (!INTEGRATION_REGISTRY.find(i => i.type === type)) {
-              INTEGRATION_REGISTRY.push({
-                type,
-                label: server.name || server.id,
-                category: "MCP Plugins",
-                icon: "Globe",
-                description: server.description || "MCP Server Plugin",
-                inputs: []
-              });
-            }
+          data.forEach((server) => {
+            blocks.push({
+              type: `tool_mcp_${server.id}`,
+              label: server.name || server.id,
+              category: "MCP Plugins",
+              icon: "Globe",
+              description: server.description || "MCP Server Plugin",
+              inputs: [],
+            });
           });
-          setMcpLoaded(true);
         }
-      })
-      .catch(console.error);
+      }
+    } catch (e) {
+      console.error("[Sidebar] Failed to fetch MCP servers", e);
+    }
 
-    fetch('/api/agents', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    })
-      .then(res => res.json())
-      .then(data => {
+    // 2. AI Agents
+    try {
+      const res = await fetch("/api/agents", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data: any[] = await res.json();
         if (Array.isArray(data)) {
-          data.forEach(agent => {
-            const type = `ai_agent_${agent.id}`;
-            if (!INTEGRATION_REGISTRY.find(i => i.type === type)) {
-              INTEGRATION_REGISTRY.push({
-                type,
-                label: agent.name || "Agent",
-                category: "AI Agents",
-                icon: "Bot",
-                description: agent.description || "Custom AI Agent",
-                inputs: [
-                  { key: "userPrompt", label: "User Prompt", type: "textarea", defaultValue: "{{input}}" }
-                ]
-              });
-            }
+          data.forEach((agent) => {
+            blocks.push({
+              type: `ai_agent_${agent.id}`,
+              label: agent.name || "Agent",
+              category: "AI Agents",
+              icon: "Bot",
+              description: agent.description || "Custom AI Agent",
+              inputs: [
+                { key: "userPrompt", label: "User Prompt", type: "textarea", defaultValue: "{{input}}" },
+              ],
+            });
           });
-          setMcpLoaded(prev => !prev);
         }
-      })
-      .catch(console.error);
+      }
+    } catch (e) {
+      console.error("[Sidebar] Failed to fetch agents", e);
+    }
 
-    // Fetch Custom Blocks
-    fetch('/api/custom-blocks', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    })
-      .then(res => res.json())
-      .then(data => {
+    // 3. Custom Blocks (fetched once — was erroneously fetched twice before)
+    try {
+      const res = await fetch("/api/custom-blocks", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data: any[] = await res.json();
         if (Array.isArray(data)) {
-          data.forEach(block => {
-            const type = `custom_block_${block.id}`;
-            if (!INTEGRATION_REGISTRY.find(i => i.type === type)) {
-              INTEGRATION_REGISTRY.push({
-                type,
-                label: block.name || "Custom Block",
-                category: "Custom Blocks",
-                icon: "Box",
-                description: block.description || "A custom reusable block",
-                inputs: (block.inputs || []).map((k: string) => ({ key: k, label: k, type: 'text' }))
-              });
-            }
+          data.forEach((block) => {
+            blocks.push({
+              type: `custom_block_${block.id}`,
+              label: block.name || "Custom Block",
+              category: "Custom Blocks",
+              icon: "Box",
+              description: block.description || "A custom reusable block",
+              inputs: (block.inputs || []).map((k: string) => ({
+                key: k,
+                label: k,
+                type: "text",
+              })),
+            });
           });
-          setMcpLoaded(prev => !prev);
         }
-      })
-      .catch(console.error);
+      }
+    } catch (e) {
+      console.error("[Sidebar] Failed to fetch custom blocks", e);
+    }
 
-    // Fetch Custom Blocks
-    fetch('/api/custom-blocks', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    })
-      .then(res => res.json())
-      .then(data => {
+    // 4. Workflow Packages
+    try {
+      const res = await fetch("/api/workflows/packages", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data: any[] = await res.json();
         if (Array.isArray(data)) {
-          data.forEach(block => {
-            const type = `custom_block_${block.id}`;
-            if (!INTEGRATION_REGISTRY.find(i => i.type === type)) {
-              INTEGRATION_REGISTRY.push({
-                type,
-                label: block.name || "Custom Block",
-                category: "Custom Blocks",
-                icon: "Box",
-                description: block.description || "A custom reusable block",
-                inputs: (block.inputs || []).map((k: string) => ({ key: k, label: k, type: 'text' }))
-              });
-            }
+          data.forEach((pkg) => {
+            blocks.push({
+              type: `package_${pkg.workflowId}`,
+              label: pkg.name || "Workflow Package",
+              category: "Packages",
+              icon: "Box",
+              description: pkg.description || "An abstracted workflow",
+              inputs: Array.isArray(pkg.packageInputs) ? pkg.packageInputs : [],
+            });
           });
-          setMcpLoaded(prev => !prev);
         }
-      })
-      .catch(console.error);
+      }
+    } catch (e) {
+      console.error("[Sidebar] Failed to fetch workflow packages", e);
+    }
 
-    // Fetch Workflow Packages
-    fetch('/api/workflows/packages', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          data.forEach(pkg => {
-            const type = `package_${pkg.workflowId}`;
-            if (!INTEGRATION_REGISTRY.find(i => i.type === type)) {
-              INTEGRATION_REGISTRY.push({
-                type,
-                label: pkg.name || "Workflow Package",
-                category: "Packages",
-                icon: "Box", // Or something else
-                description: pkg.description || "An abstracted workflow",
-                inputs: Array.isArray(pkg.packageInputs) ? pkg.packageInputs : []
-              });
-            }
-          });
-          setMcpLoaded(prev => !prev);
-        }
-      })
-      .catch(console.error);
-  };
+    setDynamicBlocks(blocks);
+  }, [token]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchDynamicBlocks();
-  }, []);
+  }, [fetchDynamicBlocks]);
+
+  // Merge static registry with dynamic blocks from the API
+  const allTools = useMemo(() => {
+    const existing = new Set(INTEGRATION_REGISTRY.map((i) => i.type));
+    const unique = dynamicBlocks.filter((b) => !existing.has(b.type));
+    return [...INTEGRATION_REGISTRY, ...unique];
+  }, [dynamicBlocks]);
 
   const filteredTools = useMemo(() => {
     const lowerTerm = searchTerm.toLowerCase();
-    return INTEGRATION_REGISTRY.filter((tool) => {
+    return allTools.filter((tool) => {
       if (tool.type === "trigger_start") return false;
       return (
         tool.label.toLowerCase().includes(lowerTerm) ||
@@ -161,8 +158,7 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
         tool.category.toLowerCase().includes(lowerTerm)
       );
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, mcpLoaded]);
+  }, [searchTerm, allTools]);
 
   const onDragStart = (event: React.DragEvent, type: string, label: string) => {
     event.dataTransfer.setData(
@@ -232,11 +228,11 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
 
         {/* OPEN LIBRARY BUTTON */}
         {!isCollapsed && (
-          <button 
+          <button
             onClick={() => setIsLibraryOpen(true)}
             className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg text-sm font-medium transition-colors border border-purple-200 mt-2"
           >
-            <BrandIcon type="Box" iconName="Box" className="w-4 h-4" /> 
+            <BrandIcon type="Box" iconName="Box" className="w-4 h-4" />
             Open Block Library
           </button>
         )}
@@ -290,8 +286,8 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
       <div className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col gap-2">
         {user?.is_admin && (
           <button
-            onClick={() => window.location.href = '/admin/users'}
-            className={`w-full flex items-center justify-center gap-2 p-2 rounded-lg font-medium transition-all ${isCollapsed ? 'bg-transparent hover:bg-purple-50 text-purple-600' : 'bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50'}`}
+            onClick={() => (window.location.href = "/admin/users")}
+            className={`w-full flex items-center justify-center gap-2 p-2 rounded-lg font-medium transition-all ${isCollapsed ? "bg-transparent hover:bg-purple-50 text-purple-600" : "bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50"}`}
             title="Admin Portal"
           >
             <Shield size={18} />
@@ -300,7 +296,7 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
         )}
         <button
           onClick={onOpenMarketplace}
-          className={`w-full flex items-center justify-center gap-2 p-2 rounded-lg font-medium transition-all ${isCollapsed ? 'bg-transparent hover:bg-blue-50 text-blue-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50'}`}
+          className={`w-full flex items-center justify-center gap-2 p-2 rounded-lg font-medium transition-all ${isCollapsed ? "bg-transparent hover:bg-blue-50 text-blue-600" : "bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"}`}
           title="MCP Marketplace"
         >
           <Globe size={18} />
@@ -325,9 +321,9 @@ export default function Sidebar({ isCollapsed, onToggle, onOpenMarketplace }: Si
 
       {/* Block Library Modal */}
       {isLibraryOpen && (
-        <BlockLibraryModal 
-          onClose={() => setIsLibraryOpen(false)} 
-          onRefreshSidebar={fetchDynamicBlocks} 
+        <BlockLibraryModal
+          onClose={() => setIsLibraryOpen(false)}
+          onRefreshSidebar={fetchDynamicBlocks}
         />
       )}
     </div>

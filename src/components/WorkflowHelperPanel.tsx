@@ -29,10 +29,18 @@ export default function WorkflowHelperPanel({ onLoadWorkflow }: WorkflowHelperPa
   const [error, setError] = useState<string | null>(null);
 
   // Chat state
+  const [selectedModel, setSelectedModel] = useState('google/gemini-2.0-flash-lite-001');
   const [chatHistory, setChatHistory] = useState<ChatMsg[]>([]);
   const [chatInput, setChatInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const SUPPORTED_MODELS = [
+    { id: 'google/gemini-2.0-flash-lite-001', name: 'Gemini 2.0 Flash Lite' },
+    { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' },
+    { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B' },
+    { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1 8B (Free)' },
+  ];
 
   useEffect(() => {
     if (isOpen) inputRef.current?.focus();
@@ -56,7 +64,7 @@ export default function WorkflowHelperPanel({ onLoadWorkflow }: WorkflowHelperPa
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ description }),
+        body: JSON.stringify({ description, model: selectedModel }),
       });
       if (!res.ok) {
         const errText = await res.text();
@@ -98,7 +106,7 @@ export default function WorkflowHelperPanel({ onLoadWorkflow }: WorkflowHelperPa
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ message, history: chatHistory }),
+        body: JSON.stringify({ message, history: chatHistory, model: selectedModel }),
       });
 
       if (!res.ok) {
@@ -108,7 +116,10 @@ export default function WorkflowHelperPanel({ onLoadWorkflow }: WorkflowHelperPa
         throw new Error(errData?.message || errText || `Server error: ${res.statusText}`);
       }
 
-      const data = await res.json() as { reply: string; workflowData?: Record<string, unknown>; remainingCredits?: number };
+      const data = await res.json() as { reply?: string; error?: string; workflowData?: Record<string, unknown>; remainingCredits?: number };
+
+      if (data.error) throw new Error(data.error);
+      if (!data.reply) throw new Error('No reply received from AI');
 
       // Add assistant reply (strip the json block for display)
       const displayReply = data.reply.replace(/```workflow-json[\s\S]*?```/g, '✅ *Workflow generated — loading on canvas…*').trim();
@@ -141,6 +152,15 @@ export default function WorkflowHelperPanel({ onLoadWorkflow }: WorkflowHelperPa
               <span className="text-white text-sm font-semibold">Workflow Helper</span>
             </div>
             <div className="flex items-center gap-2">
+              <select 
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="bg-gray-800 text-[10px] text-gray-300 border-none rounded px-1 py-0.5 outline-none hover:text-white cursor-pointer"
+              >
+                {SUPPORTED_MODELS.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
               {/* Mode toggle */}
               <div className="flex bg-gray-800 rounded-lg p-0.5 text-xs">
                 <button

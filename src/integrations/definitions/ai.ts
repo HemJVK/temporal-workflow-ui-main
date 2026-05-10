@@ -23,19 +23,23 @@ export const aiIntegrations: IntegrationSchema[] = [
         options: [
           "google/gemini-2.0-flash-lite-preview-02-05:free",
           "meta-llama/llama-3.3-70b-instruct:free",
+          "meta-llama/llama-3.1-8b-instruct:free",
+          "openai/gpt-oss-20b",
           "nvidia/nemotron-3-super-120b-a12b:free",
-          "meta-llama/llama-4-scout:free",
-          "meta-llama/llama-4-maverick:free",
-          "deepseek/deepseek-r1:free",
+          "mistralai/mistral-7b-instruct:free",
+          "google/gemini-2.0-flash-exp:free",
+          "anthropic/claude-3-5-sonnet",
+          "deepseek/deepseek-chat",
           "gpt-4o",
           "gpt-4o-mini",
-          "gemini-2.5-pro",
-          "gemini-2.5-flash",
-          "claude-3-5-sonnet-20240620",
-          "claude-3-opus-20240229",
-          "llama3-70b-8192",
-          "mixtral-8x7b-32768",
         ],
+      },
+      {
+        key: "manualModel",
+        label: "Manual Model Override (Manual Slot)",
+        type: "text",
+        placeholder: "e.g. meta-llama/llama-4-scout",
+        helperText: "If provided, this ID will override the dropdown selection above."
       },
       {
         key: "systemPrompt",
@@ -141,17 +145,21 @@ export const aiIntegrations: IntegrationSchema[] = [
         options: [
           "google/gemini-2.0-flash-lite-preview-02-05:free",
           "meta-llama/llama-3.3-70b-instruct:free",
-          "nvidia/nemotron-3-super-120b-a12b:free",
-          "meta-llama/llama-4-maverick:free",
-          "deepseek/deepseek-r1:free",
+          "meta-llama/llama-3.1-8b-instruct:free",
+          "openai/gpt-oss-20b",
+          "google/gemini-2.0-flash-exp:free",
+          "anthropic/claude-3-5-sonnet",
           "gpt-4o",
-          "gemini-2.5-pro",
-          "claude-3-5-sonnet-20240620",
-          "claude-3-opus-20240229",
-          "llama3-70b-8192"
         ],
         helperText:
-          "Complex research requires smarter models (Nemotron 120B or GPT-4o recommended).",
+          "Complex research requires smarter models (Llama 70B or GPT-4o recommended).",
+      },
+      {
+        key: "manualModel",
+        label: "Manual Model Override (Manual Slot)",
+        type: "text",
+        placeholder: "e.g. meta-llama/llama-4-scout",
+        helperText: "If provided, this ID will override the dropdown selection above."
       },
       {
         key: "topic",
@@ -194,6 +202,32 @@ export const aiIntegrations: IntegrationSchema[] = [
         label: "Agent Name",
         type: "text",
         placeholder: "e.g. Writer Agent"
+      },
+      {
+        key: "model",
+        label: "Model",
+        type: "select",
+        defaultValue: "google/gemini-2.0-flash-lite-preview-02-05:free",
+        options: [
+          "google/gemini-2.0-flash-lite-preview-02-05:free",
+          "meta-llama/llama-3.3-70b-instruct:free",
+          "meta-llama/llama-3.1-8b-instruct:free",
+          "openai/gpt-oss-20b",
+          "nvidia/nemotron-3-super-120b-a12b:free",
+          "mistralai/mistral-7b-instruct:free",
+          "google/gemini-2.0-flash-exp:free",
+          "anthropic/claude-3-5-sonnet",
+          "deepseek/deepseek-chat",
+          "gpt-4o",
+          "gpt-4o-mini",
+        ],
+      },
+      {
+        key: "manualModel",
+        label: "Manual Model Override (Manual Slot)",
+        type: "text",
+        placeholder: "e.g. meta-llama/llama-4-scout",
+        helperText: "If provided, this ID will override the dropdown selection above."
       },
       {
         key: "systemPrompt",
