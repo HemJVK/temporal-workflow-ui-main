@@ -7,6 +7,7 @@ export function useWorkflowStatus(workflowId: string, runId: string) {
     if (!workflowId) return;
 
     console.log(`Starting poll for ${workflowId}`);
+    let errorCount = 0;
 
     const interval = setInterval(async () => {
       try {
@@ -15,6 +16,7 @@ export function useWorkflowStatus(workflowId: string, runId: string) {
         );
 
         if (res.ok) {
+          errorCount = 0; // reset on success
           const data = await res.json();
 
           // 1. Update the UI with node colors
@@ -28,11 +30,19 @@ export function useWorkflowStatus(workflowId: string, runId: string) {
             console.log(`Workflow ${data.workflowStatus}. Stopping poll.`);
             clearInterval(interval);
           }
+        } else {
+           if (res.status === 404) {
+             console.log('Workflow not found. Stopping poll.');
+             clearInterval(interval);
+           }
         }
       } catch (err) {
         console.error("Polling error:", err);
-        // Optional: stop polling on 404/500 errors to prevent spamming
-        clearInterval(interval);
+        errorCount++;
+        if (errorCount >= 5) {
+          console.error("Too many polling errors. Stopping poll.");
+          clearInterval(interval);
+        }
       }
     }, 5000);
 

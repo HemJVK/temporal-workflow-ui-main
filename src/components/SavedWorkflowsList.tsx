@@ -44,9 +44,12 @@ export const SavedWorkflowsList = ({
   const [workflows, setWorkflows] = useState<Record<string, unknown>[]>([]);
   const [localWorkflows, setLocalWorkflows] = useState<Record<string, unknown>[]>([]);
   useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+
     Promise.all([
-      fetch("/api/workflows").then((res) => res.json()),
-      fetch("/api/workflows/local").then((res) => res.json())
+      fetch("/api/workflows", { headers }).then((res) => res.json()),
+      fetch("/api/workflows/local", { headers }).then((res) => res.json())
     ])
       .then(([dbData, localData]) => {
         setWorkflows(Array.isArray(dbData) ? dbData : []);

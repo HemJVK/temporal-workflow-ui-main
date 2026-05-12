@@ -1,3 +1,6 @@
+/// <reference types="vite/client" />
+/// <reference types="vitest/globals" />
+
 interface ImportMetaEnv {
   // Define your variables here
   readonly VITE_TEMPORAL_UI_URL: string;
